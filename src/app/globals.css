@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* ── Backgrounds (3-tier depth system) ── */
+  --color-surface-0: #06090F;        /* Deepest — page background, the "void" */
+  --color-surface-1: #0C1119;        /* Mid layer — sidebar, topbar, modal overlays */
+  --color-surface-2: #121926;        /* Card/panel surfaces — where content lives */
+  --color-surface-3: #1A2235;        /* Elevated — hovered cards, active elements, dropdowns */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* ── Borders ── */
+  --color-edge: #1C2536;             /* Default border — subtle, almost invisible */
+  --color-edge-strong: #2A3650;      /* Emphasized border — hover states, focused inputs */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* ── Text (4-tier hierarchy) ── */
+  --color-ink-primary: #E4E8F1;      /* Headings, active nav, important labels */
+  --color-ink-secondary: #94A0B8;    /* Body text, descriptions, table cells */
+  --color-ink-tertiary: #5C6A82;     /* Metadata, timestamps, helper text */
+  --color-ink-ghost: #3B4560;        /* Disabled text, empty states, placeholder */
+
+  /* ── Accent (cyan-teal spectrum) ── */
+  --color-signal: #22D3B7;           /* Primary accent — buttons, links, progress fills, active indicators */
+  --color-signal-hover: #34E8CC;     /* Accent hover — slightly brighter, not a different hue */
+  --color-signal-muted: rgba(34, 211, 183, 0.12);  /* Accent background tint — active nav bg, badge bg */
+  --color-signal-glow: rgba(34, 211, 183, 0.25);   /* Focus rings, hover shadows */
+
+  /* ── Semantic colors ── */
+  --color-success: #34D399;          /* Graded, completed, published */
+  --color-warning: #FBBF24;          /* Pending, submitted, low stock */
+  --color-danger: #F87171;           /* Errors, overdue, failed */
+  --color-info: #60A5FA;             /* In progress, informational */
+  --color-purple: #A78BFA;           /* Code-related, tier badges */
+
+  /* ── Semantic tints (for badge/tag backgrounds) ── */
+  --color-success-tint: rgba(52, 211, 153, 0.12);
+  --color-warning-tint: rgba(251, 191, 36, 0.12);
+  --color-danger-tint: rgba(248, 113, 113, 0.12);
+  --color-info-tint: rgba(96, 165, 250, 0.12);
+  --color-purple-tint: rgba(167, 139, 250, 0.12);
+
+  /* ── Radii ── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--color-edge);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--color-edge-strong);
+  --shadow-glow: 0 0 20px var(--color-signal-glow);
+
+  /* ── Font families ── */
+  --font-family-display: var(--font-display), system-ui, sans-serif;
+  --font-family-body: var(--font-body), system-ui, sans-serif;
+  --font-family-mono: var(--font-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family-body);
+  background-color: var(--color-surface-0);
+  color: var(--color-ink-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* Fade in — for page content on mount */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slide up — for modals, toasts, cards loading in */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-edge); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-edge-strong); }
