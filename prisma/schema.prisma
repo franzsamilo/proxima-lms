@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum SchoolLevel {
+  ELEMENTARY
+  HS
+  COLLEGE
+}
+
+enum Tier {
+  STARTER
+  EXPLORER
+  PROFESSIONAL
+}
+
+enum LessonType {
+  SLIDES
+  CODE
+  QUIZ
+  TASK
+  VIDEO
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+enum ModuleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ─── Auth.js v5 required models ───
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Application models ───
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String
+  role           Role      @default(STUDENT)
+  department     String?
+  schoolLevel    SchoolLevel?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  taughtCourses  Course[]         @relation("Instructor")
+  enrollments    Enrollment[]
+  submissions    Submission[]
+  announcements  Announcement[]   @relation("Author")
+  kitAssignments HardwareAssignment[]
+}
+
+model Course {
+  id              String      @id @default(cuid())
+  title           String
+  description     String      @db.Text
+  level           SchoolLevel
+  tier            Tier
+  maxStudents     Int         @default(30)
+  startDate       DateTime
+  endDate         DateTime
+  isPublished     Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  instructorId    String
+  instructor      User        @relation("Instructor", fields: [instructorId], references: [id])
+  modules         Module[]
+  enrollments     Enrollment[]
+  events          CalendarEvent[]
+  packageId       String?
+  package         LessonPackage? @relation(fields: [packageId], references: [id])
+}
+
+model Enrollment {
+  id          String   @id @default(cuid())
+  enrolledAt  DateTime @default(now())
+  progress    Float    @default(0)
+
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId     String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+}
+
+model Module {
+  id        String       @id @default(cuid())
+  title     String
+  order     Int
+  status    ModuleStatus @default(DRAFT)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  courseId   String
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id            String     @id @default(cuid())
+  title         String
+  type          LessonType
+  order         Int
+  durationMins  Int        @default(30)
+  content       Json?
+  codeSkeleton  String?    @db.Text
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  moduleId      String
+  module        Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  submissions   Submission[]
+}
+
+model Submission {
+  id            String           @id @default(cuid())
+  status        SubmissionStatus @default(DRAFT)
+  submittedAt   DateTime?
+  gradedAt      DateTime?
+  grade         Int?
+  feedback      String?          @db.Text
+
+  codeContent   String?          @db.Text
+  videoUrl      String?
+  quizAnswers   Json?
+  fileUrl       String?
+
+  studentId     String
+  student       User             @relation(fields: [studentId], references: [id])
+  lessonId      String
+  lesson        Lesson           @relation(fields: [lessonId], references: [id])
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([studentId, lessonId])
+}
+
+model LessonPackage {
+  id          String      @id @default(cuid())
+  name        String
+  level       SchoolLevel
+  tier        Tier
+  price       Float
+  description String?     @db.Text
+  includes    String[]
+  isActive    Boolean     @default(true)
+
+  courses     Course[]
+}
+
+model HardwareKit {
+  id          String      @id @default(cuid())
+  name        String
+  level       SchoolLevel
+  specs       String      @db.Text
+  totalQty    Int
+  imageEmoji  String      @default("🤖")
+
+  assignments HardwareAssignment[]
+}
+
+model HardwareAssignment {
+  id          String    @id @default(cuid())
+  assignedAt  DateTime  @default(now())
+  returnedAt  DateTime?
+
+  kitId       String
+  kit         HardwareKit @relation(fields: [kitId], references: [id])
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@unique([kitId, userId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  priority  String   @default("normal")
+  createdAt DateTime @default(now())
+
+  authorId  String
+  author    User     @relation("Author", fields: [authorId], references: [id])
+}
+
+model CalendarEvent {
+  id       String   @id @default(cuid())
+  title    String
+  date     DateTime
+  type     String
+
+  courseId  String?
+  course   Course?  @relation(fields: [courseId], references: [id])
+}
