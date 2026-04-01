@@ -10,7 +10,10 @@
       "Bash(npx next:*)",
       "Bash(npx prisma:*)",
       "Bash(ls \"C:/Users/Franz Samilo/Desktop/XTS Projects/proxima-lms/src/app/\\(dashboard\\)/\")",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cd:*)"
     ]
   }
 }
