@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp proxima-lms-temp/package.json proxima-lms-temp/package-lock.json proxima-lms-temp/tsconfig.json proxima-lms-temp/next.config.ts proxima-lms-temp/postcss.config.mjs proxima-lms-temp/eslint.config.mjs proxima-lms-temp/next-env.d.ts \"proxima-lms/\")",
+      "Bash(cp -r proxima-lms-temp/src \"proxima-lms/\")",
+      "Bash(cp -r proxima-lms-temp/public \"proxima-lms/\")",
+      "Bash(cp -r proxima-lms-temp/node_modules \"proxima-lms/\")",
+      "Bash(npm install:*)",
+      "Bash(npm view:*)",
+      "Bash(npx next:*)",
+      "Bash(npx prisma:*)",
+      "Bash(ls \"C:/Users/Franz Samilo/Desktop/XTS Projects/proxima-lms/src/app/\\(dashboard\\)/\")",
+      "Bash(echo \"EXIT: $?\")"
+    ]
+  }
+}
