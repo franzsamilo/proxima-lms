@@ -49,7 +49,8 @@ export function QuizRenderer({
     const res = await submitTask(formData)
 
     if (res && "error" in res) {
-      setError(typeof res.error === "string" ? res.error : "Submission failed")
+      const resErr = (res as { error: unknown }).error
+      setError(typeof resErr === "string" ? resErr : "Submission failed")
     } else {
       setIsSubmitted(true)
     }

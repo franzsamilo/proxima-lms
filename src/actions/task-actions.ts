@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { submitTaskSchema } from "@/lib/validations"
 import { revalidatePath } from "next/cache"
+import { Prisma } from "@prisma/client"
 
 export async function submitTask(formData: FormData) {
   const user = await requireRole(["STUDENT"])
@@ -32,7 +33,7 @@ export async function submitTask(formData: FormData) {
       submittedAt: new Date(),
       codeContent: parsed.data.codeContent,
       videoUrl: parsed.data.videoUrl,
-      quizAnswers: parsed.data.quizAnswers,
+      quizAnswers: parsed.data.quizAnswers as Prisma.InputJsonValue | undefined,
       fileUrl: parsed.data.fileUrl,
     },
     create: {
@@ -42,7 +43,7 @@ export async function submitTask(formData: FormData) {
       submittedAt: new Date(),
       codeContent: parsed.data.codeContent,
       videoUrl: parsed.data.videoUrl,
-      quizAnswers: parsed.data.quizAnswers,
+      quizAnswers: parsed.data.quizAnswers as Prisma.InputJsonValue | undefined,
       fileUrl: parsed.data.fileUrl,
     },
   })

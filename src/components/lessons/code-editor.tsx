@@ -39,7 +39,8 @@ export function CodeEditor({
     const res = await submitTask(formData)
 
     if (res && "error" in res) {
-      setResult({ error: typeof res.error === "string" ? res.error : "Submission failed" })
+      const resErr = (res as { error: unknown }).error
+      setResult({ error: typeof resErr === "string" ? resErr : "Submission failed" })
     } else {
       setResult({ success: true })
     }

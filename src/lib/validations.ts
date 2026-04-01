@@ -44,7 +44,7 @@ export const submitTaskSchema = z.object({
   lessonId: z.string().cuid(),
   codeContent: z.string().optional(),
   videoUrl: z.string().url().optional(),
-  quizAnswers: z.record(z.string()).optional(),
+  quizAnswers: z.record(z.string(), z.string()).optional(),
   fileUrl: z.string().url().optional(),
 })
 

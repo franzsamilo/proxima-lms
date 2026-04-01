@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { submitTaskSchema } from "@/lib/validations"
+import { Prisma } from "@prisma/client"
 
 export async function GET(request: Request) {
   const session = await auth()
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
     update: {
       codeContent: parsed.data.codeContent,
       videoUrl: parsed.data.videoUrl,
-      quizAnswers: parsed.data.quizAnswers ?? undefined,
+      quizAnswers: (parsed.data.quizAnswers ?? undefined) as Prisma.InputJsonValue | undefined,
       fileUrl: parsed.data.fileUrl,
       status: "SUBMITTED",
       submittedAt: new Date(),
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
       lessonId: parsed.data.lessonId,
       codeContent: parsed.data.codeContent,
       videoUrl: parsed.data.videoUrl,
-      quizAnswers: parsed.data.quizAnswers ?? undefined,
+      quizAnswers: (parsed.data.quizAnswers ?? undefined) as Prisma.InputJsonValue | undefined,
       fileUrl: parsed.data.fileUrl,
       status: "SUBMITTED",
       submittedAt: new Date(),

@@ -54,8 +54,9 @@ export function TaskSubmission({
     const res = await submitTask(formData)
 
     if (res && "error" in res) {
+      const resErr = (res as { error: unknown }).error
       setResult({
-        error: typeof res.error === "string" ? res.error : "Submission failed",
+        error: typeof resErr === "string" ? resErr : "Submission failed",
       })
     } else {
       setResult({ success: true })

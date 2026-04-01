@@ -22,15 +22,11 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const result = await signIn("credentials", {
+      await signIn("credentials", {
         email,
         password,
         redirectTo: "/dashboard",
       })
-
-      if (result?.error) {
-        setError("Invalid email or password. Please try again.")
-      }
     } catch {
       setError("Something went wrong. Please try again.")
     } finally {
