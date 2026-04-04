@@ -72,3 +72,16 @@ export async function deleteModule(moduleId: string) {
   revalidatePath(`/courses/${existing.courseId}`)
   return { success: true }
 }
+
+export async function reorderModules(courseId: string, moduleIds: string[]) {
+  await requireRole(["TEACHER", "ADMIN"])
+
+  await prisma.$transaction(
+    moduleIds.map((id, i) =>
+      prisma.module.update({ where: { id }, data: { order: i + 1 } })
+    )
+  )
+
+  revalidatePath(`/courses/${courseId}`)
+  return { success: true }
+}

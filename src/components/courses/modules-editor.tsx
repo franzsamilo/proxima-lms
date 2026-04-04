@@ -1,9 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { AddLessonForm } from "@/components/courses/add-lesson-form"
 import { EditLessonModal } from "@/components/courses/edit-lesson-modal"
-import { FileText, Code2, HelpCircle, ClipboardList, Video } from "lucide-react"
+import { reorderModules } from "@/actions/module-actions"
+import { reorderLessons } from "@/actions/lesson-actions"
+import { FileText, Code2, HelpCircle, ClipboardList, Video, ChevronUp, ChevronDown } from "lucide-react"
 
 interface Lesson {
   id: string
@@ -24,6 +27,7 @@ interface Module {
 
 interface ModulesEditorProps {
   modules: Module[]
+  courseId: string
 }
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -42,8 +46,25 @@ const typeColors: Record<string, string> = {
   VIDEO: "text-purple",
 }
 
-export function ModulesEditor({ modules }: ModulesEditorProps) {
+export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
   const [editingLesson, setEditingLesson] = React.useState<Lesson | null>(null)
+  const router = useRouter()
+
+  async function handleModuleMove(index: number, direction: "up" | "down") {
+    const newIndex = direction === "up" ? index - 1 : index + 1
+    const ids = modules.map((m) => m.id)
+    ;[ids[index], ids[newIndex]] = [ids[newIndex], ids[index]]
+    await reorderModules(courseId, ids)
+    router.refresh()
+  }
+
+  async function handleLessonMove(mod: Module, lessonIndex: number, direction: "up" | "down") {
+    const newIndex = direction === "up" ? lessonIndex - 1 : lessonIndex + 1
+    const ids = mod.lessons.map((l) => l.id)
+    ;[ids[lessonIndex], ids[newIndex]] = [ids[newIndex], ids[lessonIndex]]
+    await reorderLessons(mod.id, ids)
+    router.refresh()
+  }
 
   return (
     <>
@@ -53,40 +74,76 @@ export function ModulesEditor({ modules }: ModulesEditorProps) {
         </p>
       ) : (
         <div className="space-y-3 mb-4">
-          {modules.map((mod) => (
+          {modules.map((mod, modIdx) => (
             <div
               key={mod.id}
               className="rounded-[var(--radius-md)] border border-edge p-3"
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-[family-name:var(--font-family-mono)] text-[12px] font-bold text-signal bg-signal-muted w-6 h-6 rounded flex items-center justify-center">
-                  {mod.order}
+                  {modIdx + 1}
                 </span>
-                <span className="font-[family-name:var(--font-family-body)] text-[14px] font-medium text-ink-primary">
+                <span className="font-[family-name:var(--font-family-body)] text-[14px] font-medium text-ink-primary flex-1">
                   {mod.title}
                 </span>
+                <div className="flex gap-0.5">
+                  <button
+                    onClick={() => handleModuleMove(modIdx, "up")}
+                    disabled={modIdx === 0}
+                    className="p-1 text-ink-ghost hover:text-ink-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Move module up"
+                  >
+                    <ChevronUp size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleModuleMove(modIdx, "down")}
+                    disabled={modIdx === modules.length - 1}
+                    className="p-1 text-ink-ghost hover:text-ink-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Move module down"
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
               </div>
 
               {mod.lessons.length > 0 && (
-                <ul className="ml-8 space-y-1 mb-2">
-                  {mod.lessons.map((lesson) => {
+                <ul className="ml-8 space-y-0.5 mb-2">
+                  {mod.lessons.map((lesson, lessonIdx) => {
                     const Icon = typeIcons[lesson.type] ?? FileText
                     const color = typeColors[lesson.type] ?? "text-ink-tertiary"
                     return (
-                      <li key={lesson.id}>
+                      <li key={lesson.id} className="flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => setEditingLesson(lesson)}
-                          className="flex items-center gap-2 w-full text-left px-2 py-1.5 -mx-2 rounded-[var(--radius-sm)] hover:bg-surface-3 transition-colors group cursor-pointer"
+                          className="flex items-center gap-2 flex-1 text-left px-2 py-1.5 rounded-[var(--radius-sm)] hover:bg-surface-3 transition-colors group cursor-pointer"
                         >
                           <Icon size={14} className={color} />
                           <span className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-secondary group-hover:text-ink-primary transition-colors">
-                            {lesson.order}. {lesson.title}
+                            {lesson.title}
                           </span>
                           <span className="font-[family-name:var(--font-family-mono)] text-[10px] text-ink-ghost ml-auto">
                             {lesson.type}
                           </span>
                         </button>
+                        <div className="flex gap-0.5 shrink-0">
+                          <button
+                            onClick={() => handleLessonMove(mod, lessonIdx, "up")}
+                            disabled={lessonIdx === 0}
+                            className="p-0.5 text-ink-ghost hover:text-ink-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Move lesson up"
+                          >
+                            <ChevronUp size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleLessonMove(mod, lessonIdx, "down")}
+                            disabled={lessonIdx === mod.lessons.length - 1}
+                            className="p-0.5 text-ink-ghost hover:text-ink-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Move lesson down"
+                          >
+                            <ChevronDown size={12} />
+                          </button>
+                        </div>
                       </li>
                     )
                   })}

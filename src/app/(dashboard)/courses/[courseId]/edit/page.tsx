@@ -58,7 +58,7 @@ export default async function EditCoursePage(props: {
             Modules
           </h2>
 
-          <ModulesEditor modules={JSON.parse(JSON.stringify(course.modules))} />
+          <ModulesEditor modules={JSON.parse(JSON.stringify(course.modules))} courseId={courseId} />
 
           <AddModuleForm courseId={courseId} />
         </Card>

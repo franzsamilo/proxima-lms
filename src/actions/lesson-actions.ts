@@ -97,3 +97,24 @@ export async function deleteLesson(lessonId: string) {
   revalidatePath(`/courses/${existing.module.courseId}`)
   return { success: true }
 }
+
+export async function reorderLessons(moduleId: string, lessonIds: string[]) {
+  await requireRole(["TEACHER", "ADMIN"])
+
+  const module = await prisma.module.findUnique({
+    where: { id: moduleId },
+    select: { courseId: true },
+  })
+
+  await prisma.$transaction(
+    lessonIds.map((id, i) =>
+      prisma.lesson.update({ where: { id }, data: { order: i + 1 } })
+    )
+  )
+
+  if (module) {
+    revalidatePath(`/courses/${module.courseId}`)
+  }
+
+  return { success: true }
+}
