@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Button } from "@/components/ui/button"
 import { Toast } from "@/components/ui/toast"
 import { useToast } from "@/hooks/use-toast"
@@ -163,9 +164,8 @@ export function SettingsClient({
             >
               Current Password
             </label>
-            <Input
+            <PasswordInput
               id="settings-current-password"
-              type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Enter current password"
@@ -182,9 +182,8 @@ export function SettingsClient({
             >
               New Password
             </label>
-            <Input
+            <PasswordInput
               id="settings-new-password"
-              type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="At least 6 characters"
@@ -202,9 +201,8 @@ export function SettingsClient({
             >
               Confirm New Password
             </label>
-            <Input
+            <PasswordInput
               id="settings-confirm-password"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repeat new password"

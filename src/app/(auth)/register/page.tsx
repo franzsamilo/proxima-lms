@@ -5,6 +5,7 @@ import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Select } from "@/components/ui/select"
 
 type Role = "STUDENT" | "TEACHER"
@@ -155,9 +156,8 @@ export default function RegisterPage() {
             >
               Password
             </label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -176,9 +176,8 @@ export default function RegisterPage() {
             >
               Confirm Password
             </label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

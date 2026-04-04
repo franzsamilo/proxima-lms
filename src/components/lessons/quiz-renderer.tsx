@@ -58,6 +58,14 @@ export function QuizRenderer({
     setIsSubmitting(false)
   }
 
+  if (questions.length === 0) {
+    return (
+      <div className="py-12 text-center text-ink-tertiary font-[family-name:var(--font-family-body)] text-[13px]">
+        No quiz questions available yet.
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {questions.map((q, qIdx) => {
