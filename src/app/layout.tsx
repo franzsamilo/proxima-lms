@@ -26,6 +26,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Proxima LMS",
   description: "Robotics & Technical Education Learning Management System",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 }
 
 export default function RootLayout({

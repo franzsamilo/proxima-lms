@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3B7"/>
+      <stop offset="100%" stop-color="#0EA5A0"/>
+    </linearGradient>
+    <linearGradient id="star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.05)"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <!-- Subtle star/glow accent top-right -->
+  <circle cx="390" cy="120" r="36" fill="url(#star)"/>
+  <circle cx="390" cy="120" r="8" fill="rgba(255,255,255,0.5)"/>
+  <!-- Letter P -->
+  <text x="256" y="380" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="340" fill="white" letter-spacing="-10">P</text>
+</svg>
