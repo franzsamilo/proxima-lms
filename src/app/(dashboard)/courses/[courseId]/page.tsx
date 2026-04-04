@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { LevelBadge, StatusBadge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { ModuleAccordion } from "@/components/courses/module-accordion"
+import { CourseTimeline } from "@/components/courses/course-timeline"
 
 export default async function CourseDetailPage(props: {
   params: Promise<{ courseId: string }>
@@ -109,6 +110,18 @@ export default async function CourseDetailPage(props: {
           <ProgressBar value={enrollment.progress} thick />
         </div>
       )}
+
+      {/* Course Timeline */}
+      <div className="mb-6">
+        <CourseTimeline
+          startDate={course.startDate}
+          endDate={course.endDate}
+          modules={course.modules.map((m) => ({
+            title: m.title,
+            status: m.status,
+          }))}
+        />
+      </div>
 
       {/* Module Accordions */}
       <div>
