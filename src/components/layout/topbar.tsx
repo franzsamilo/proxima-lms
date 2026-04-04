@@ -1,19 +1,42 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Menu, Search, Bell, X, ArrowLeft } from "lucide-react"
+import { Menu, Search, Bell, X, ArrowLeft, Megaphone, CalendarDays } from "lucide-react"
 import { Avatar } from "@/components/ui/avatar"
+import type { NotificationItem } from "@/app/(dashboard)/dashboard-shell"
 
 interface TopbarProps {
   user: {
     name: string
     image?: string | null
   }
+  notifications?: NotificationItem[]
   onMenuClick: () => void
 }
 
-export function Topbar({ user, onMenuClick }: TopbarProps) {
+function formatRelativeTime(dateStr: string) {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = date.getTime() - now.getTime()
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays)
+    if (absDays === 0) return "Today"
+    if (absDays === 1) return "Yesterday"
+    if (absDays < 7) return `${absDays}d ago`
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
+  if (diffDays === 0) return "Today"
+  if (diffDays === 1) return "Tomorrow"
+  if (diffDays < 7) return `In ${diffDays}d`
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
+export function Topbar({ user, notifications = [], onMenuClick }: TopbarProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -21,6 +44,19 @@ export function Topbar({ user, onMenuClick }: TopbarProps) {
       searchInputRef.current.focus()
     }
   }, [mobileSearchOpen])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false)
+      }
+    }
+    if (notifOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [notifOpen])
 
   // Mobile search expanded state
   if (mobileSearchOpen) {
@@ -90,14 +126,68 @@ export function Topbar({ user, onMenuClick }: TopbarProps) {
           />
         </div>
 
-        {/* Notification bell */}
-        <button
-          className="relative p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-[7px] h-[7px] bg-danger rounded-full" />
-        </button>
+        {/* Notification bell + dropdown */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setNotifOpen(!notifOpen)}
+            className="relative p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Notifications"
+          >
+            <Bell size={18} />
+            {notifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-[7px] h-[7px] bg-danger rounded-full" />
+            )}
+          </button>
+
+          {notifOpen && (
+            <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-surface-1 border border-edge rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-50 animate-[slideUp_0.15s_ease]">
+              <div className="px-4 py-3 border-b border-edge">
+                <h3 className="font-[family-name:var(--font-family-display)] text-[13px] font-bold text-ink-primary">
+                  Notifications
+                </h3>
+              </div>
+              {notifications.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-tertiary">
+                    No new notifications
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {notifications.map((notif, i) => (
+                    <div
+                      key={notif.id}
+                      className={`flex items-start gap-3 px-4 py-3 hover:bg-surface-3 transition-colors ${
+                        i < notifications.length - 1 ? "border-b border-edge" : ""
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {notif.type === "announcement" ? (
+                          <Megaphone size={14} className="text-warning" />
+                        ) : (
+                          <CalendarDays size={14} className="text-info" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-[family-name:var(--font-family-body)] text-[13px] font-medium text-ink-primary truncate">
+                          {notif.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary">
+                            {notif.subtitle}
+                          </span>
+                          <span className="font-[family-name:var(--font-family-mono)] text-[10px] text-ink-ghost">
+                            {formatRelativeTime(notif.time)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* User avatar */}
         <Avatar name={user.name} size={32} className="cursor-pointer" />
