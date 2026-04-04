@@ -9,6 +9,7 @@ import { ProgressBar } from "@/components/ui/progress-bar"
 import { ModuleAccordion } from "@/components/courses/module-accordion"
 import { CourseTimeline } from "@/components/courses/course-timeline"
 import { EnrollButton } from "@/components/courses/enroll-button"
+import { PublishToggle } from "@/components/courses/publish-toggle"
 
 export default async function CourseDetailPage(props: {
   params: Promise<{ courseId: string }>
@@ -91,12 +92,15 @@ export default async function CourseDetailPage(props: {
 
         <div className="flex gap-2 shrink-0">
           {canEdit && (
-            <Link href={`/courses/${courseId}/edit`}>
-              <Button variant="secondary">
-                <Pencil size={14} className="mr-1.5" />
-                Edit
-              </Button>
-            </Link>
+            <>
+              <PublishToggle courseId={courseId} isPublished={course.isPublished} />
+              <Link href={`/courses/${courseId}/edit`}>
+                <Button variant="secondary">
+                  <Pencil size={14} className="mr-1.5" />
+                  Edit
+                </Button>
+              </Link>
+            </>
           )}
           {user.role === "STUDENT" && !enrollment && course.isPublished && (
             <EnrollButton courseId={courseId} />

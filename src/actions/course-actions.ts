@@ -84,7 +84,7 @@ export async function deleteCourse(courseId: string) {
   return { success: true }
 }
 
-export async function publishCourse(courseId: string) {
+export async function togglePublishCourse(courseId: string) {
   const user = await requireRole(["TEACHER", "ADMIN"])
 
   const existing = await prisma.course.findUnique({ where: { id: courseId } })
@@ -94,12 +94,12 @@ export async function publishCourse(courseId: string) {
     return { error: "Forbidden" }
   }
 
-  await prisma.course.update({
+  const updated = await prisma.course.update({
     where: { id: courseId },
-    data: { isPublished: true },
+    data: { isPublished: !existing.isPublished },
   })
 
   revalidatePath("/courses")
   revalidatePath(`/courses/${courseId}`)
-  return { success: true }
+  return { success: true, isPublished: updated.isPublished }
 }
