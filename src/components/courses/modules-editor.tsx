@@ -4,9 +4,10 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { AddLessonForm } from "@/components/courses/add-lesson-form"
 import { EditLessonModal } from "@/components/courses/edit-lesson-modal"
-import { reorderModules } from "@/actions/module-actions"
-import { reorderLessons } from "@/actions/lesson-actions"
-import { FileText, Code2, HelpCircle, ClipboardList, Video, ChevronUp, ChevronDown } from "lucide-react"
+import { reorderModules, deleteModule } from "@/actions/module-actions"
+import { reorderLessons, deleteLesson } from "@/actions/lesson-actions"
+import { FileText, Code2, HelpCircle, ClipboardList, Video, ChevronUp, ChevronDown, Trash2 } from "lucide-react"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
 interface Lesson {
   id: string
@@ -48,6 +49,8 @@ const typeColors: Record<string, string> = {
 
 export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
   const [editingLesson, setEditingLesson] = React.useState<Lesson | null>(null)
+  const [confirmDeleteModule, setConfirmDeleteModule] = React.useState<Module | null>(null)
+  const [confirmDeleteLesson, setConfirmDeleteLesson] = React.useState<{ lesson: Lesson; moduleId: string } | null>(null)
   const router = useRouter()
 
   async function handleModuleMove(index: number, direction: "up" | "down") {
@@ -103,6 +106,13 @@ export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
                   >
                     <ChevronDown size={14} />
                   </button>
+                  <button
+                    onClick={() => setConfirmDeleteModule(mod)}
+                    className="p-1 text-ink-ghost hover:text-danger transition-colors"
+                    aria-label="Delete module"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
 
@@ -143,6 +153,13 @@ export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
                           >
                             <ChevronDown size={12} />
                           </button>
+                          <button
+                            onClick={() => setConfirmDeleteLesson({ lesson, moduleId: mod.id })}
+                            className="p-0.5 text-ink-ghost hover:text-danger transition-colors"
+                            aria-label="Delete lesson"
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         </div>
                       </li>
                     )
@@ -155,6 +172,36 @@ export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
           ))}
         </div>
       )}
+
+      <ConfirmationDialog
+        open={!!confirmDeleteModule}
+        onClose={() => setConfirmDeleteModule(null)}
+        onConfirm={async () => {
+          if (confirmDeleteModule) {
+            await deleteModule(confirmDeleteModule.id)
+            router.refresh()
+          }
+        }}
+        title="Delete Module"
+        message={`Delete "${confirmDeleteModule?.title}" and all its lessons? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
+
+      <ConfirmationDialog
+        open={!!confirmDeleteLesson}
+        onClose={() => setConfirmDeleteLesson(null)}
+        onConfirm={async () => {
+          if (confirmDeleteLesson) {
+            await deleteLesson(confirmDeleteLesson.lesson.id)
+            router.refresh()
+          }
+        }}
+        title="Delete Lesson"
+        message={`Delete "${confirmDeleteLesson?.lesson.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
 
       <EditLessonModal
         open={!!editingLesson}

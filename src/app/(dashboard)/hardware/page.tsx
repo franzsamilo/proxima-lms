@@ -13,7 +13,7 @@ export default async function HardwarePage() {
     include: {
       assignments: {
         where: { returnedAt: null },
-        select: { id: true },
+        select: { id: true, user: { select: { id: true, name: true } } },
       },
     },
   })
@@ -32,6 +32,10 @@ export default async function HardwarePage() {
     totalQty: kit.totalQty,
     imageEmoji: kit.imageEmoji,
     activeAssignments: kit.assignments.length,
+    assignments: kit.assignments.map((a) => ({
+      id: a.id,
+      userName: a.user.name,
+    })),
   }))
 
   return (

@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KitCard } from "@/components/hardware/kit-card"
 import { KitFormModal } from "@/components/hardware/kit-form-modal"
 import { AssignKitTrigger } from "@/components/hardware/assign-kit-trigger"
+import { returnKit } from "@/actions/hardware-actions"
 
 interface Kit {
   id: string
@@ -15,6 +17,7 @@ interface Kit {
   totalQty: number
   imageEmoji: string
   activeAssignments: number
+  assignments: { id: string; userName: string }[]
 }
 
 interface Student {
@@ -31,6 +34,7 @@ interface HardwareClientProps {
 
 export function HardwareClient({ kits, students, isAdmin }: HardwareClientProps) {
   const [showKitForm, setShowKitForm] = useState(false)
+  const router = useRouter()
 
   return (
     <div>
@@ -58,24 +62,48 @@ export function HardwareClient({ kits, students, isAdmin }: HardwareClientProps)
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {kits.map((kit) => (
-            <KitCard
-              key={kit.id}
-              kit={{
-                id: kit.id,
-                name: kit.name,
-                emoji: kit.imageEmoji,
-                specs: kit.specs,
-                level: kit.level,
-                totalQty: kit.totalQty,
-                assignedCount: kit.activeAssignments,
-              }}
-              action={
-                <AssignKitTrigger
-                  kit={{ id: kit.id, name: kit.name }}
-                  students={students}
-                />
-              }
-            />
+            <div key={kit.id} className="flex flex-col">
+              <KitCard
+                kit={{
+                  id: kit.id,
+                  name: kit.name,
+                  emoji: kit.imageEmoji,
+                  specs: kit.specs,
+                  level: kit.level,
+                  totalQty: kit.totalQty,
+                  assignedCount: kit.activeAssignments,
+                }}
+                action={
+                  <AssignKitTrigger
+                    kit={{ id: kit.id, name: kit.name }}
+                    students={students}
+                  />
+                }
+              />
+              {kit.assignments.length > 0 && (
+                <div className="mt-2 px-1">
+                  {kit.assignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="flex items-center justify-between py-1.5 text-[12px]"
+                    >
+                      <span className="font-[family-name:var(--font-family-body)] text-ink-secondary">
+                        {assignment.userName}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          await returnKit(assignment.id)
+                          router.refresh()
+                        }}
+                        className="font-[family-name:var(--font-family-body)] text-[11px] font-medium text-ink-ghost hover:text-warning transition-colors"
+                      >
+                        Return
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
