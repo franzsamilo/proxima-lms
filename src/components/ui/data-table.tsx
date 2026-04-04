@@ -3,13 +3,33 @@ import { cn } from "@/lib/utils"
 
 /* ── Table Wrapper ── */
 
-export interface DataTableProps extends React.HTMLAttributes<HTMLDivElement> {}
+export interface DataTableProps<T = any> extends React.HTMLAttributes<HTMLDivElement> {
+  data?: T[]
+  mobileCard?: (item: T, index: number) => React.ReactNode
+}
 
 const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, data, mobileCard, ...props }, ref) => {
     return (
-      <div ref={ref} className={cn("w-full overflow-x-auto", className)} {...props}>
-        <table className="w-full border-collapse">{children}</table>
+      <div ref={ref} className={cn("w-full", className)} {...props}>
+        {/* Mobile card list */}
+        {data && mobileCard && (
+          <div className="flex flex-col gap-3 md:hidden">
+            {data.length === 0 ? (
+              <div className="py-12 text-center text-ink-tertiary font-[family-name:var(--font-family-body)] text-[13px]">
+                No results found.
+              </div>
+            ) : (
+              data.map((item, i) => (
+                <div key={i}>{mobileCard(item, i)}</div>
+              ))
+            )}
+          </div>
+        )}
+        {/* Desktop table */}
+        <div className={cn("overflow-x-auto", data && mobileCard ? "hidden md:block" : "")}>
+          <table className="w-full border-collapse">{children}</table>
+        </div>
       </div>
     )
   }
