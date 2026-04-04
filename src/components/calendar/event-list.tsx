@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Trash2 } from "lucide-react"
 import { Card, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { formatDate } from "@/lib/utils"
 import { deleteEvent } from "@/actions/calendar-actions"
 
@@ -27,6 +28,7 @@ const eventTypeBadgeVariant: Record<string, "warning" | "danger" | "info"> = {
 
 export function EventList({ events, canDelete = false }: EventListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<CalendarEvent | null>(null)
 
   async function handleDelete(eventId: string) {
     setDeletingId(eventId)
@@ -35,6 +37,7 @@ export function EventList({ events, canDelete = false }: EventListProps) {
   }
 
   return (
+    <>
     <Card>
       <CardHeader>Events</CardHeader>
       {events.length === 0 ? (
@@ -66,7 +69,7 @@ export function EventList({ events, canDelete = false }: EventListProps) {
                 </div>
                 {canDelete && (
                   <button
-                    onClick={() => handleDelete(evt.id)}
+                    onClick={() => setConfirmDelete(evt)}
                     disabled={deletingId === evt.id}
                     className="p-1.5 text-ink-ghost hover:text-danger hover:bg-danger-tint rounded-[var(--radius-sm)] transition-colors shrink-0 disabled:opacity-50"
                     aria-label={`Delete ${evt.title}`}
@@ -80,5 +83,18 @@ export function EventList({ events, canDelete = false }: EventListProps) {
         </div>
       )}
     </Card>
+
+    <ConfirmationDialog
+      open={!!confirmDelete}
+      onClose={() => setConfirmDelete(null)}
+      onConfirm={() => {
+        if (confirmDelete) handleDelete(confirmDelete.id)
+      }}
+      title="Delete Event"
+      message={`Are you sure you want to delete "${confirmDelete?.title}"? This cannot be undone.`}
+      confirmLabel="Delete"
+      variant="danger"
+    />
+    </>
   )
 }
