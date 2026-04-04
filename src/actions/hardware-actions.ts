@@ -60,3 +60,53 @@ export async function returnKit(assignmentId: string) {
   revalidatePath("/hardware")
   return { success: true }
 }
+
+export async function createKit(formData: FormData) {
+  await requireRole(["ADMIN"])
+
+  const name = formData.get("name") as string
+  const level = formData.get("level") as string
+  const specs = formData.get("specs") as string
+  const totalQty = Number(formData.get("totalQty"))
+  const imageEmoji = (formData.get("imageEmoji") as string) || "🤖"
+
+  if (!name || !level || !specs || !totalQty) {
+    return { error: "All fields are required" }
+  }
+
+  await prisma.hardwareKit.create({
+    data: { name, level: level as any, specs, totalQty, imageEmoji },
+  })
+
+  revalidatePath("/hardware")
+  return { success: true }
+}
+
+export async function updateKit(kitId: string, formData: FormData) {
+  await requireRole(["ADMIN"])
+
+  const existing = await prisma.hardwareKit.findUnique({ where: { id: kitId } })
+  if (!existing) return { error: "Kit not found" }
+
+  const updateData: Record<string, unknown> = {}
+
+  const name = formData.get("name")
+  if (name !== null) updateData.name = String(name)
+
+  const level = formData.get("level")
+  if (level !== null) updateData.level = String(level)
+
+  const specs = formData.get("specs")
+  if (specs !== null) updateData.specs = String(specs)
+
+  const totalQty = formData.get("totalQty")
+  if (totalQty !== null) updateData.totalQty = Number(totalQty)
+
+  const imageEmoji = formData.get("imageEmoji")
+  if (imageEmoji !== null) updateData.imageEmoji = String(imageEmoji)
+
+  await prisma.hardwareKit.update({ where: { id: kitId }, data: updateData })
+
+  revalidatePath("/hardware")
+  return { success: true }
+}
