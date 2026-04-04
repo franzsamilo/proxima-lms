@@ -146,7 +146,9 @@ export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
                             {lesson.title}
                           </span>
                           {!hasContent(lesson) && (
-                            <AlertCircle size={12} className="text-warning shrink-0" title="No content — click to add" />
+                            <span title="No content — click to add">
+                              <AlertCircle size={12} className="text-warning shrink-0" />
+                            </span>
                           )}
                           <span className="font-[family-name:var(--font-family-mono)] text-[10px] text-ink-ghost ml-auto">
                             {lesson.type}
