@@ -13,9 +13,9 @@ const buttonVariants = {
 } as const
 
 const buttonSizes = {
-  default: "px-4 py-2 text-[13px]",
-  sm: "px-3 py-1.5 text-[12px]",
-  icon: "p-2",
+  default: "px-4 py-2 text-[13px] min-h-[44px] md:min-h-0",
+  sm: "px-3 py-1.5 text-[12px] min-h-[38px] md:min-h-0",
+  icon: "p-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0",
 } as const
 
 type ButtonVariant = keyof typeof buttonVariants
