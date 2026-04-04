@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { CreateCourseForm } from "@/components/courses/create-course-form"
 import { AddModuleForm } from "@/components/courses/add-module-form"
-import { AddLessonForm } from "@/components/courses/add-lesson-form"
+import { ModulesEditor } from "@/components/courses/modules-editor"
 
 export default async function EditCoursePage(props: {
   params: Promise<{ courseId: string }>
@@ -24,7 +24,7 @@ export default async function EditCoursePage(props: {
         include: {
           lessons: {
             orderBy: { order: "asc" },
-            select: { id: true, title: true, type: true, order: true },
+            select: { id: true, title: true, type: true, order: true, durationMins: true, content: true, codeSkeleton: true },
           },
         },
       },
@@ -39,7 +39,7 @@ export default async function EditCoursePage(props: {
 
   return (
     <div>
-      <h1 className="font-[family-name:var(--font-family-display)] text-[24px] font-bold tracking-tight text-ink-primary mb-6">
+      <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-6">
         Edit Course
       </h1>
 
@@ -58,47 +58,7 @@ export default async function EditCoursePage(props: {
             Modules
           </h2>
 
-          {course.modules.length === 0 ? (
-            <p className="text-[13px] text-ink-tertiary mb-4">
-              No modules yet. Add a module to get started.
-            </p>
-          ) : (
-            <div className="space-y-3 mb-4">
-              {course.modules.map((mod) => (
-                <div
-                  key={mod.id}
-                  className="rounded-[var(--radius-md)] border border-edge p-3"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-[family-name:var(--font-family-mono)] text-[12px] font-bold text-signal bg-signal-muted w-6 h-6 rounded flex items-center justify-center">
-                      {mod.order}
-                    </span>
-                    <span className="font-[family-name:var(--font-family-body)] text-[14px] font-medium text-ink-primary">
-                      {mod.title}
-                    </span>
-                  </div>
-
-                  {mod.lessons.length > 0 && (
-                    <ul className="ml-8 space-y-1 mb-2">
-                      {mod.lessons.map((lesson) => (
-                        <li
-                          key={lesson.id}
-                          className="text-[13px] text-ink-secondary"
-                        >
-                          {lesson.order}. {lesson.title}{" "}
-                          <span className="text-ink-tertiary">
-                            ({lesson.type})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <AddLessonForm moduleId={mod.id} />
-                </div>
-              ))}
-            </div>
-          )}
+          <ModulesEditor modules={JSON.parse(JSON.stringify(course.modules))} />
 
           <AddModuleForm courseId={courseId} />
         </Card>
