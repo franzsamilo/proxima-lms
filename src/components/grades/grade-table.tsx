@@ -41,8 +41,42 @@ export function GradeTable({ grades }: GradeTableProps) {
     )
   }
 
+  const renderMobileCard = (row: GradeRow) => (
+    <div className="bg-surface-2 border border-edge rounded-[var(--radius-lg)] p-3.5">
+      <div className="flex justify-between items-start gap-3 mb-2">
+        <div className="min-w-0">
+          <p className="font-[family-name:var(--font-family-body)] text-[13px] font-semibold text-ink-primary truncate">
+            {row.lessonTitle}
+          </p>
+          <p className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-secondary mt-0.5">
+            {row.courseTitle}
+          </p>
+        </div>
+        <GradeCircle grade={row.grade} className="w-9 h-9 text-[13px] shrink-0" />
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant={lessonTypeVariantMap[row.lessonType] ?? "neutral"}>
+          {row.lessonType}
+        </Badge>
+        {row.submittedAt && (
+          <span className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary">
+            {new Date(row.submittedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
+        )}
+      </div>
+      {row.feedback && (
+        <p className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary mt-2 line-clamp-2">
+          {row.feedback}
+        </p>
+      )}
+    </div>
+  )
+
   return (
-    <DataTable>
+    <DataTable data={grades} mobileCard={renderMobileCard}>
       <DataTableHeader>
         <tr>
           <DataTableHead>Task</DataTableHead>
