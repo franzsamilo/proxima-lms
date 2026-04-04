@@ -19,8 +19,10 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         <Sidebar user={user} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Topbar user={user} onMenuClick={() => setMobileNavOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-6 animate-[fadeIn_0.25s_ease]">
-            {children}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-[fadeIn_0.25s_ease]">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
           </main>
         </div>
       </div>

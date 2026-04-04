@@ -39,7 +39,7 @@ export default async function UsersPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-[family-name:var(--font-family-display)] text-[24px] font-bold tracking-tight text-ink-primary">
+        <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary">
           Users
         </h1>
         <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-secondary mt-1">

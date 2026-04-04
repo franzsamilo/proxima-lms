@@ -197,7 +197,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="font-[family-name:var(--font-family-display)] text-[24px] font-bold tracking-tight text-ink-primary mb-1">
+      <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-1">
         Dashboard
       </h1>
       <p className="text-[14px] text-ink-tertiary mb-6">

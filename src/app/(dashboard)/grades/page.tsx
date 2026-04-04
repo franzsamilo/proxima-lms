@@ -123,7 +123,7 @@ export default async function GradesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-[family-name:var(--font-family-display)] text-[24px] font-bold tracking-tight text-ink-primary">
+      <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary">
         Grades
       </h1>
 

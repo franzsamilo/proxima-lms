@@ -20,7 +20,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
           <p className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[2px] uppercase text-ink-ghost mb-2">
             {stat.label}
           </p>
-          <p className="font-[family-name:var(--font-family-display)] text-[32px] font-extrabold tracking-tight text-ink-primary">
+          <p className="font-[family-name:var(--font-family-display)] text-[24px] md:text-[32px] font-extrabold tracking-tight text-ink-primary">
             {stat.value}
           </p>
           {stat.subtext && (

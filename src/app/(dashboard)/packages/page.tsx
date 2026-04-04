@@ -47,7 +47,7 @@ export default async function PackagesPage() {
 
   return (
     <div>
-      <h1 className="font-[family-name:var(--font-family-display)] text-[24px] font-bold tracking-tight text-ink-primary mb-6">
+      <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-6">
         Lesson Packages
       </h1>
 

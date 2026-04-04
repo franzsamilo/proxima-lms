@@ -59,7 +59,7 @@ export default async function CourseDetailPage(props: {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <LevelBadge level={course.level} />
@@ -68,7 +68,7 @@ export default async function CourseDetailPage(props: {
             />
           </div>
 
-          <h1 className="font-[family-name:var(--font-family-display)] text-[24px] font-bold tracking-tight text-ink-primary mb-2">
+          <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-2">
             {course.title}
           </h1>
 
@@ -76,7 +76,7 @@ export default async function CourseDetailPage(props: {
             {course.description}
           </p>
 
-          <div className="flex items-center gap-4 text-[13px] text-ink-tertiary">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-tertiary">
             <span>Instructor: {course.instructor.name}</span>
             <span>{course._count.enrollments} enrolled</span>
             <span>
