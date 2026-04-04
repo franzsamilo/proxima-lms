@@ -1,9 +1,7 @@
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { Card } from "@/components/ui/card"
-import { Tabs } from "@/components/ui/tabs"
-import { TaskTable } from "@/components/tasks/task-table"
+import { TasksClient } from "@/components/tasks/tasks-client"
 import type { TaskRow } from "@/components/tasks/task-table"
 
 async function getSubmissions(userId: string, role: string) {
@@ -76,36 +74,13 @@ export default async function TasksPage() {
 
   const isTeacherOrAdmin = user.role === "TEACHER" || user.role === "ADMIN"
 
-  const tabs = [
-    { label: "All", value: "all" },
-    { label: "Pending", value: "pending" },
-    { label: "Graded", value: "graded" },
-  ]
-
-  function filterSubmissions(activeTab: string) {
-    if (activeTab === "pending") return submissions.filter((s) => s.status === "SUBMITTED")
-    if (activeTab === "graded") return submissions.filter((s) => s.status === "GRADED")
-    return submissions
-  }
-
   return (
     <div>
       <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-6">
         Tasks
       </h1>
 
-      <Card className="p-0 overflow-hidden">
-        <div className="p-5">
-          <Tabs tabs={tabs} defaultValue="all">
-            {(activeTab) => (
-              <TaskTable
-                submissions={filterSubmissions(activeTab)}
-                showStudent={isTeacherOrAdmin}
-              />
-            )}
-          </Tabs>
-        </div>
-      </Card>
+      <TasksClient submissions={submissions} showStudent={isTeacherOrAdmin} />
     </div>
   )
 }
