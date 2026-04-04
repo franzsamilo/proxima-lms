@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { CreateCourseForm } from "@/components/courses/create-course-form"
 import { AddModuleForm } from "@/components/courses/add-module-form"
 import { ModulesEditor } from "@/components/courses/modules-editor"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export default async function EditCoursePage(props: {
   params: Promise<{ courseId: string }>
@@ -39,6 +40,11 @@ export default async function EditCoursePage(props: {
 
   return (
     <div>
+      <Breadcrumb items={[
+        { label: "Courses", href: "/courses" },
+        { label: course.title, href: `/courses/${courseId}` },
+        { label: "Edit" },
+      ]} />
       <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-6">
         Edit Course
       </h1>

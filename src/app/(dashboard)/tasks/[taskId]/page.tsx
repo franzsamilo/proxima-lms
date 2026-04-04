@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { redirect, notFound } from "next/navigation"
 import { Card, CardHeader } from "@/components/ui/card"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { TaskDetail } from "@/components/tasks/task-detail"
 import { GradingForm } from "@/components/tasks/grading-form"
 
@@ -76,6 +77,10 @@ export default async function TaskDetailPage(props: {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
+      <Breadcrumb items={[
+        { label: "Tasks", href: "/tasks" },
+        { label: submission.lesson.title },
+      ]} />
       <TaskDetail submission={submissionDetail} />
 
       {canGrade && (
