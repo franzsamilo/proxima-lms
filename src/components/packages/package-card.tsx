@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Check } from "lucide-react"
 import { LevelBadge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -125,11 +126,13 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
         </div>
       )}
 
-      {/* Subscribe button */}
+      {/* Browse courses button */}
       <div className="mt-auto pt-2">
-        <Button className="w-full" variant="primary">
-          Subscribe
-        </Button>
+        <Link href={`/courses?level=${pkg.level}`}>
+          <Button className="w-full" variant="primary">
+            Browse Courses
+          </Button>
+        </Link>
       </div>
     </div>
   )
