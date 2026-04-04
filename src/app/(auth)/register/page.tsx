@@ -33,7 +33,7 @@ export default function RegisterPage() {
     if (!name.trim()) next.name = "Name is required."
     if (!email.trim()) next.email = "Email is required."
     if (!password) next.password = "Password is required."
-    else if (password.length < 8) next.password = "Password must be at least 8 characters."
+    else if (password.length < 6) next.password = "Password must be at least 6 characters."
     if (password !== confirmPassword) next.confirmPassword = "Passwords do not match."
     setErrors(next)
     return Object.keys(next).length === 0

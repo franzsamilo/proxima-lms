@@ -30,5 +30,6 @@ export async function gradeSubmission(submissionId: string, formData: FormData) 
 
   revalidatePath("/tasks")
   revalidatePath(`/tasks/${submissionId}`)
+  revalidatePath("/grades")
   return { success: true }
 }
