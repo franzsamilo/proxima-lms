@@ -4,11 +4,15 @@ import { requireRole } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { gradeTaskSchema } from "@/lib/validations"
 import { revalidatePath } from "next/cache"
+import { updateEnrollmentProgress } from "@/lib/progress"
 
 export async function gradeSubmission(submissionId: string, formData: FormData) {
   await requireRole(["TEACHER", "ADMIN"])
 
-  const existing = await prisma.submission.findUnique({ where: { id: submissionId } })
+  const existing = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: { lesson: { include: { module: true } } },
+  })
   if (!existing) return { error: "Submission not found" }
 
   const parsed = gradeTaskSchema.safeParse({
@@ -28,8 +32,12 @@ export async function gradeSubmission(submissionId: string, formData: FormData) 
     },
   })
 
+  await updateEnrollmentProgress(existing.studentId, existing.lesson.module.courseId)
+
   revalidatePath("/tasks")
   revalidatePath(`/tasks/${submissionId}`)
   revalidatePath("/grades")
+  revalidatePath("/courses")
+  revalidatePath("/dashboard")
   return { success: true }
 }

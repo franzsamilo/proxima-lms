@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { submitTaskSchema } from "@/lib/validations"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
+import { updateEnrollmentProgress } from "@/lib/progress"
 
 export async function submitTask(formData: FormData) {
   const user = await requireRole(["STUDENT"])
@@ -48,6 +49,16 @@ export async function submitTask(formData: FormData) {
     },
   })
 
+  // Update enrollment progress
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: parsed.data.lessonId },
+    include: { module: true },
+  })
+  if (lesson) {
+    await updateEnrollmentProgress(user.id, lesson.module.courseId)
+  }
+
   revalidatePath("/tasks")
+  revalidatePath("/courses")
   return { success: true, submissionId: submission.id }
 }
