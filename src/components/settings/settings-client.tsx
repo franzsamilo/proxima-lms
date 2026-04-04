@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Toast } from "@/components/ui/toast"
 import { useToast } from "@/hooks/use-toast"
 import { updateProfile, changePassword } from "@/actions/settings-actions"
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
 
 interface SettingsClientProps {
   initialName: string
@@ -32,6 +33,14 @@ export function SettingsClient({
   const [passwordPending, setPasswordPending] = React.useState(false)
 
   const { showToast, toastProps } = useToast()
+
+  const isDirty =
+    name !== initialName ||
+    department !== initialDepartment ||
+    currentPassword !== "" ||
+    newPassword !== "" ||
+    confirmPassword !== ""
+  useUnsavedChanges(isDirty)
 
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
