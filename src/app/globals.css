@@ -85,3 +85,10 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-edge); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-edge-strong); }
+
+/* Touch device enhancements */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 38px;
+  }
+}
