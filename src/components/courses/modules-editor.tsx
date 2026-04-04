@@ -6,7 +6,7 @@ import { AddLessonForm } from "@/components/courses/add-lesson-form"
 import { EditLessonModal } from "@/components/courses/edit-lesson-modal"
 import { reorderModules, deleteModule } from "@/actions/module-actions"
 import { reorderLessons, deleteLesson } from "@/actions/lesson-actions"
-import { FileText, Code2, HelpCircle, ClipboardList, Video, ChevronUp, ChevronDown, Trash2 } from "lucide-react"
+import { FileText, Code2, HelpCircle, ClipboardList, Video, ChevronUp, ChevronDown, Trash2, AlertCircle } from "lucide-react"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
 interface Lesson {
@@ -45,6 +45,19 @@ const typeColors: Record<string, string> = {
   QUIZ: "text-warning",
   TASK: "text-success",
   VIDEO: "text-purple",
+}
+
+function hasContent(lesson: Lesson): boolean {
+  const c = lesson.content
+  if (!c) return false
+  switch (lesson.type) {
+    case "SLIDES": return Array.isArray(c.slides) && c.slides.length > 0
+    case "CODE": return !!(c.brief || lesson.codeSkeleton)
+    case "QUIZ": return Array.isArray(c.questions) && c.questions.length > 0
+    case "TASK": return !!(c.brief)
+    case "VIDEO": return !!(c.videoUrl)
+    default: return false
+  }
 }
 
 export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
@@ -132,6 +145,9 @@ export function ModulesEditor({ modules, courseId }: ModulesEditorProps) {
                           <span className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-secondary group-hover:text-ink-primary transition-colors">
                             {lesson.title}
                           </span>
+                          {!hasContent(lesson) && (
+                            <AlertCircle size={12} className="text-warning shrink-0" title="No content — click to add" />
+                          )}
                           <span className="font-[family-name:var(--font-family-mono)] text-[10px] text-ink-ghost ml-auto">
                             {lesson.type}
                           </span>
