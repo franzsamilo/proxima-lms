@@ -30,18 +30,16 @@ export async function GET(
     return NextResponse.json({ error: "Submission not found" }, { status: 404 })
   }
 
-  const userRole = session.user.role
+  const role = session.user.role
   const userId = session.user.id
 
-  // Owner, instructor, or admin
-  if (userRole === "STUDENT" && submission.studentId !== userId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
+  // Explicit allow-list: owner, instructor, or admin only.
+  const isOwner = submission.studentId === userId
+  const isInstructor =
+    submission.lesson.module.course.instructorId === userId
+  const isAdmin = role === "ADMIN"
 
-  if (
-    userRole === "TEACHER" &&
-    submission.lesson.module.course.instructorId !== userId
-  ) {
+  if (!isOwner && !isInstructor && !isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

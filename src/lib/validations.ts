@@ -58,6 +58,12 @@ export const submitTaskSchema = z.object({
   fileUrl: z.string().url().optional(),
 })
 
+export const tasksQuerySchema = z.object({
+  status: z.enum(["DRAFT", "SUBMITTED", "GRADED", "RETURNED"]).optional(),
+  courseId: z.string().cuid().optional(),
+  tab: z.enum(["all", "pending", "graded"]).optional(),
+})
+
 export const gradeTaskSchema = z.object({
   grade: z.number().int().min(0).max(100),
   feedback: z.string().max(2000).optional(),

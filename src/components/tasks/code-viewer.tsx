@@ -7,42 +7,13 @@ export interface CodeViewerProps {
 
 export function CodeViewer({ code, language }: CodeViewerProps) {
   return (
-    <div
-      style={{
-        background: "#0D1117",
-        border: "1px solid var(--color-edge)",
-        borderRadius: "var(--radius-md)",
-        padding: "16px",
-        overflow: "hidden",
-      }}
-    >
+    <div className="bg-[#0D1117] border border-edge rounded-[var(--radius-md)] p-4 overflow-hidden">
       {language && (
-        <div
-          style={{
-            fontFamily: "var(--font-family-mono)",
-            fontSize: "11px",
-            color: "var(--color-ink-ghost)",
-            marginBottom: "8px",
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-          }}
-        >
+        <div className="font-[family-name:var(--font-family-mono)] text-[11px] text-ink-ghost mb-2 uppercase tracking-[1px]">
           {language}
         </div>
       )}
-      <pre
-        style={{
-          margin: 0,
-          fontFamily: "var(--font-family-mono)",
-          fontSize: "13px",
-          fontWeight: 400,
-          color: "#C9D1D9",
-          lineHeight: 1.7,
-          overflowX: "auto",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-        }}
-      >
+      <pre className="m-0 font-[family-name:var(--font-family-mono)] text-[13px] font-normal leading-[1.7] text-[#C9D1D9] overflow-x-auto whitespace-pre-wrap break-words">
         <code>{code}</code>
       </pre>
     </div>
