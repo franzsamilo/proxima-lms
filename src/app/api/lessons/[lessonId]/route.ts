@@ -31,17 +31,19 @@ export async function GET(
   const userId = session.user.id
   const course = lesson.module.course
 
-  // Check access: enrolled student, instructor, or admin
-  if (userRole === "STUDENT") {
+  // Positive allow-list: admin, instructor of course, or enrolled student
+  const isAdmin = userRole === "ADMIN"
+  const isInstructor = course.instructorId === userId
+  let isEnrolled = false
+  if (!isAdmin && !isInstructor) {
     const enrollment = await prisma.enrollment.findUnique({
       where: {
         studentId_courseId: { studentId: userId, courseId: course.id },
       },
     })
-    if (!enrollment) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-  } else if (userRole === "TEACHER" && course.instructorId !== userId) {
+    isEnrolled = enrollment !== null
+  }
+  if (!isAdmin && !isInstructor && !isEnrolled) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
