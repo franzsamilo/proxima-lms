@@ -1,20 +1,20 @@
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn, gradeTier, type GradeTier } from "@/lib/utils"
 
 export interface GradeCircleProps extends React.HTMLAttributes<HTMLDivElement> {
   grade: number
 }
 
-function getGradeStyles(grade: number) {
-  if (grade >= 90) return { bg: "bg-success-tint", border: "border-success/30", text: "text-success" }
-  if (grade >= 80) return { bg: "bg-info-tint", border: "border-info/30", text: "text-info" }
-  if (grade >= 70) return { bg: "bg-warning-tint", border: "border-warning/30", text: "text-warning" }
-  return { bg: "bg-danger-tint", border: "border-danger/30", text: "text-danger" }
+const tierStyles: Record<GradeTier, { bg: string; border: string; text: string }> = {
+  a: { bg: "bg-success-tint", border: "border-success/30", text: "text-success" },
+  b: { bg: "bg-info-tint", border: "border-info/30", text: "text-info" },
+  c: { bg: "bg-warning-tint", border: "border-warning/30", text: "text-warning" },
+  f: { bg: "bg-danger-tint", border: "border-danger/30", text: "text-danger" },
 }
 
 const GradeCircle = React.forwardRef<HTMLDivElement, GradeCircleProps>(
   ({ grade, className, ...props }, ref) => {
-    const styles = getGradeStyles(grade)
+    const styles = tierStyles[gradeTier(grade)]
 
     return (
       <div

@@ -46,7 +46,7 @@ export function GradeSummaryCards({ summaries }: GradeSummaryCardsProps) {
               )}
               <div className="flex-1 space-y-0.5">
                 <p className="font-[family-name:var(--font-family-mono)] text-[20px] font-bold text-ink-primary">
-                  {summary.averageGrade !== null ? `${Math.round(summary.averageGrade)}` : "—"}
+                  {summary.averageGrade !== null ? `${summary.averageGrade}` : "—"}
                 </p>
                 <p className="text-[11px] text-ink-ghost font-[family-name:var(--font-family-mono)] uppercase tracking-[1px]">
                   avg grade

@@ -18,25 +18,13 @@ export function formatDateTime(date: Date | string): string {
   })
 }
 
-export function getGradeColor(grade: number): string {
-  if (grade >= 90) return "text-emerald-400"
-  if (grade >= 80) return "text-blue-400"
-  if (grade >= 70) return "text-amber-400"
-  return "text-red-400"
-}
+export type GradeTier = "a" | "b" | "c" | "f"
 
-export function getGradeBgColor(grade: number): string {
-  if (grade >= 90) return "bg-emerald-400/10 border-emerald-400/20"
-  if (grade >= 80) return "bg-blue-400/10 border-blue-400/20"
-  if (grade >= 70) return "bg-amber-400/10 border-amber-400/20"
-  return "bg-red-400/10 border-red-400/20"
-}
-
-export function getGradeLabel(grade: number): string {
-  if (grade >= 90) return "Excellent"
-  if (grade >= 80) return "Good"
-  if (grade >= 70) return "Satisfactory"
-  return "Needs Improvement"
+export function gradeTier(grade: number): GradeTier {
+  if (grade >= 90) return "a"
+  if (grade >= 80) return "b"
+  if (grade >= 70) return "c"
+  return "f"
 }
 
 export function getLevelColor(level: string): string {
