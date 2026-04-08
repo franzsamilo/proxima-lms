@@ -71,9 +71,24 @@ export const gradeTaskSchema = z.object({
 
 export const createEventSchema = z.object({
   title: z.string().min(2).max(100),
-  date: z.string().transform((s) => new Date(s)),
+  date: z
+    .string()
+    .transform((s) => new Date(s))
+    .refine((d) => !Number.isNaN(d.getTime()), { message: "Invalid date" })
+    .refine(
+      (d) => {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        return d.getTime() >= today.getTime()
+      },
+      { message: "Date cannot be in the past" }
+    ),
   type: z.enum(["deadline", "exam", "event"]),
-  courseId: z.string().cuid().optional(),
+  courseId: z
+    .string()
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v))
+    .pipe(z.string().cuid().optional()),
 })
 
 export const updateUserSchema = z.object({

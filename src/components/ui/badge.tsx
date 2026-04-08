@@ -7,6 +7,7 @@ const badgeVariants = {
   warning: "bg-warning-tint text-warning",
   danger: "bg-danger-tint text-danger",
   purple: "bg-purple-tint text-purple",
+  signal: "bg-signal-muted text-signal",
   neutral: "bg-[rgba(94,106,130,0.12)] text-ink-tertiary",
 } as const
 

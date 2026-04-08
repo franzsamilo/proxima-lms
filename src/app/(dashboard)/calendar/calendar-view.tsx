@@ -23,12 +23,14 @@ interface CalendarViewProps {
   events: CalendarEvent[]
   courses: Course[]
   canCreate: boolean
+  today: string // YYYY-MM-DD from server
 }
 
-export function CalendarView({ events, courses, canCreate }: CalendarViewProps) {
+export function CalendarView({ events, courses, canCreate, today }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth(), 1)
+    // Seed from server-truth "today" (YYYY-MM-DD) to avoid client/server drift
+    const [y, m] = today.split("-").map(Number)
+    return new Date(y, m - 1, 1)
   })
   const [showForm, setShowForm] = useState(false)
 
@@ -67,6 +69,7 @@ export function CalendarView({ events, courses, canCreate }: CalendarViewProps) 
             events={events}
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
+            today={today}
           />
         </div>
 
