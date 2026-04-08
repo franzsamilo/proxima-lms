@@ -42,6 +42,14 @@ export const createLessonSchema = z.object({
   moduleId: z.string().cuid(),
 })
 
+export const updateModuleSchema = z.object({
+  title: z.string().min(2).max(100).optional(),
+  order: z.number().int().min(0).optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
+})
+
+export const updateLessonSchema = createLessonSchema.partial().omit({ moduleId: true })
+
 export const submitTaskSchema = z.object({
   lessonId: z.string().cuid(),
   codeContent: z.string().optional(),

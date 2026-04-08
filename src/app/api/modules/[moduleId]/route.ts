@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { updateModuleSchema } from "@/lib/validations"
 
 export async function PATCH(
   request: Request,
@@ -31,11 +33,20 @@ export async function PATCH(
   }
 
   const body = await request.json()
+  const parsed = updateModuleSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { errors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
+  }
+
   const updated = await prisma.module.update({
     where: { id: moduleId },
-    data: body,
+    data: parsed.data,
   })
 
+  revalidatePath(`/courses/${updated.courseId}`)
   return NextResponse.json(updated)
 }
 
