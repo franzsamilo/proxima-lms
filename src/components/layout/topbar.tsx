@@ -12,6 +12,7 @@ interface TopbarProps {
   }
   notifications?: NotificationItem[]
   onMenuClick: () => void
+  pageTitle?: string
 }
 
 function formatRelativeTime(dateStr: string) {
@@ -33,7 +34,7 @@ function formatRelativeTime(dateStr: string) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function Topbar({ user, notifications = [], onMenuClick }: TopbarProps) {
+export function Topbar({ user, notifications = [], onMenuClick, pageTitle }: TopbarProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -94,8 +95,8 @@ export function Topbar({ user, notifications = [], onMenuClick }: TopbarProps) {
 
   return (
     <header className="flex items-center justify-between h-[60px] px-4 lg:px-6 bg-surface-1 border-b border-edge shrink-0">
-      {/* Left: mobile hamburger */}
-      <div className="flex items-center">
+      {/* Left: mobile hamburger + page title */}
+      <div className="flex items-center gap-2 min-w-0">
         <button
           onClick={onMenuClick}
           className="lg:hidden p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -103,6 +104,11 @@ export function Topbar({ user, notifications = [], onMenuClick }: TopbarProps) {
         >
           <Menu size={20} />
         </button>
+        {pageTitle && (
+          <h1 className="font-[family-name:var(--font-family-display)] text-[15px] font-bold tracking-[1px] text-ink-primary truncate">
+            {pageTitle}
+          </h1>
+        )}
       </div>
 
       {/* Right side */}

@@ -23,7 +23,9 @@ export default auth((req) => {
   if (isAuthPage && isLoggedIn) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
   }
-  return NextResponse.next()
+  const res = NextResponse.next()
+  res.headers.set("x-pathname", path)
+  return res
 })
 
 export const config = {
