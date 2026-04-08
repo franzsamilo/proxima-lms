@@ -9,7 +9,7 @@ import { PasswordInput } from "@/components/ui/password-input"
 import { Select } from "@/components/ui/select"
 
 type Role = "STUDENT" | "TEACHER"
-type SchoolLevel = "ELEMENTARY" | "HIGH_SCHOOL" | "COLLEGE"
+type SchoolLevel = "ELEMENTARY" | "HS" | "COLLEGE"
 
 interface FieldErrors {
   name?: string
@@ -25,7 +25,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [role, setRole] = useState<Role>("STUDENT")
-  const [schoolLevel, setSchoolLevel] = useState<SchoolLevel>("HIGH_SCHOOL")
+  const [schoolLevel, setSchoolLevel] = useState<SchoolLevel>("HS")
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
 
@@ -227,7 +227,7 @@ export default function RegisterPage() {
                 onChange={(e) => setSchoolLevel(e.target.value as SchoolLevel)}
               >
                 <option value="ELEMENTARY">Elementary</option>
-                <option value="HIGH_SCHOOL">High School</option>
+                <option value="HS">High School</option>
                 <option value="COLLEGE">College</option>
               </Select>
             </div>
