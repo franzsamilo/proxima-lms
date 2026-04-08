@@ -25,6 +25,7 @@ export async function createCourse(formData: FormData) {
       ...parsed.data,
       tier: getTierFromLevel(parsed.data.level),
       instructorId: user.id,
+      isPublished: false,
     },
   })
 

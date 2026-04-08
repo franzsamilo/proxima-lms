@@ -26,6 +26,8 @@ export const createCourseSchema = z.object({
   endDate: z.string().transform((s) => new Date(s)),
 })
 
+export const updateCourseSchema = createCourseSchema.partial()
+
 export const createModuleSchema = z.object({
   title: z.string().min(2).max(100),
   courseId: z.string().cuid(),

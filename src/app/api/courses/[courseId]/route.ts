@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { updateCourseSchema } from "@/lib/validations"
 
 export async function GET(
   request: Request,
@@ -72,9 +73,17 @@ export async function PATCH(
   }
 
   const body = await request.json()
+  const parsed = updateCourseSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { errors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
+  }
+
   const updated = await prisma.course.update({
     where: { id: courseId },
-    data: body,
+    data: parsed.data,
   })
 
   return NextResponse.json(updated)
