@@ -119,3 +119,44 @@ export const usersQuerySchema = z.object({
   role: userRoleEnum.optional(),
   search: z.string().max(100).optional(),
 })
+
+// ─── Settings ───
+
+export const updateProfileSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be at most 100 characters")
+    .refine((s) => s.trim().length >= 2, {
+      message: "Name must be at least 2 characters",
+    }),
+  department: z
+    .string()
+    .max(100, "Department must be at most 100 characters")
+    .nullable()
+    .optional(),
+})
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(6, "Current password must be at least 6 characters")
+      .max(128),
+    newPassword: z
+      .string()
+      .min(6, "New password must be at least 6 characters")
+      .max(72, "New password must be at most 72 characters")
+      .refine((s) => s.trim().length >= 6, {
+        message: "New password cannot be only whitespace",
+      }),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "New passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine((d) => d.currentPassword !== d.newPassword, {
+    message: "New password must differ from current password",
+    path: ["newPassword"],
+  })

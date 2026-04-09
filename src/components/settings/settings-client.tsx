@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useActionState } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -14,73 +15,72 @@ interface SettingsClientProps {
   initialName: string
   initialEmail: string
   initialDepartment: string
+  userRole: string
 }
 
 export function SettingsClient({
   initialName,
   initialEmail,
   initialDepartment,
+  userRole,
 }: SettingsClientProps) {
   // Profile state
   const [name, setName] = React.useState(initialName)
   const [department, setDepartment] = React.useState(initialDepartment)
-  const [profilePending, setProfilePending] = React.useState(false)
 
   // Password state
   const [currentPassword, setCurrentPassword] = React.useState("")
   const [newPassword, setNewPassword] = React.useState("")
   const [confirmPassword, setConfirmPassword] = React.useState("")
-  const [passwordPending, setPasswordPending] = React.useState(false)
 
-  const { showToast, toastProps } = useToast()
+  const { showToast, hideToast, toastProps } = useToast()
 
-  const isDirty =
-    name !== initialName ||
-    department !== initialDepartment ||
-    currentPassword !== "" ||
-    newPassword !== "" ||
-    confirmPassword !== ""
-  useUnsavedChanges(isDirty)
+  // Dismiss any visible toast when the component unmounts (finding 11).
+  React.useEffect(() => {
+    return () => hideToast()
+  }, [hideToast])
 
-  async function handleProfileSave(e: React.FormEvent) {
-    e.preventDefault()
-    setProfilePending(true)
+  type FormState = { error?: string; success?: boolean } | null
 
-    const formData = new FormData()
-    formData.set("name", name)
-    formData.set("department", department)
-
-    const result = await updateProfile(formData)
-
-    if (result?.error) {
-      showToast(result.error, "error")
-    } else {
+  // Profile form via useActionState (finding 9).
+  const [profileState, profileAction, profilePending] = useActionState<FormState, FormData>(
+    async (_prevState, formData) => {
+      const result = await updateProfile(null, formData)
+      if ("error" in result) {
+        showToast(result.error, "error")
+        return { error: result.error }
+      }
       showToast("Profile updated successfully.", "success")
-    }
-    setProfilePending(false)
-  }
+      return { success: true }
+    },
+    null
+  )
 
-  async function handlePasswordChange(e: React.FormEvent) {
-    e.preventDefault()
-    setPasswordPending(true)
-
-    const formData = new FormData()
-    formData.set("currentPassword", currentPassword)
-    formData.set("newPassword", newPassword)
-    formData.set("confirmPassword", confirmPassword)
-
-    const result = await changePassword(formData)
-
-    if (result?.error) {
-      showToast(result.error, "error")
-    } else {
+  // Password form via useActionState (finding 9).
+  const [, passwordAction, passwordPending] = useActionState<FormState, FormData>(
+    async (_prevState, formData) => {
+      const result = await changePassword(null, formData)
+      if ("error" in result) {
+        showToast(result.error, "error")
+        return { error: result.error }
+      }
       showToast("Password changed successfully.", "success")
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
-    }
-    setPasswordPending(false)
-  }
+      return { success: true }
+    },
+    null
+  )
+
+  // Finding 10: Only count password fields as dirty when newPassword is
+  // non-empty. A bare currentPassword entry (user started then abandoned)
+  // shouldn't trigger the unsaved-changes warning.
+  const profileDirty = name !== initialName || department !== initialDepartment
+  const passwordDirty = newPassword !== "" || confirmPassword !== ""
+  useUnsavedChanges(profileDirty || passwordDirty)
+
+  const showDepartment = userRole !== "STUDENT"
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -94,7 +94,7 @@ export function SettingsClient({
           Profile
         </h2>
 
-        <form onSubmit={handleProfileSave} className="space-y-4">
+        <form action={profileAction} className="space-y-4">
           {/* Name */}
           <div>
             <label
@@ -105,6 +105,7 @@ export function SettingsClient({
             </label>
             <Input
               id="settings-name"
+              name="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your full name"
@@ -134,21 +135,28 @@ export function SettingsClient({
             </p>
           </div>
 
-          {/* Department */}
-          <div>
-            <label
-              htmlFor="settings-department"
-              className="block font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-1.5"
-            >
-              Department
-            </label>
-            <Input
-              id="settings-department"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              placeholder="e.g. Robotics, Engineering…"
-            />
-          </div>
+          {/* Department — only for TEACHER/ADMIN (finding 2) */}
+          {showDepartment && (
+            <div>
+              <label
+                htmlFor="settings-department"
+                className="block font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-1.5"
+              >
+                Department
+              </label>
+              <Input
+                id="settings-department"
+                name="department"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="e.g. Robotics, Engineering…"
+              />
+            </div>
+          )}
+
+          {profileState?.error && (
+            <p className="text-danger text-sm">{profileState.error}</p>
+          )}
 
           <div className="pt-2">
             <Button type="submit" disabled={profilePending}>
@@ -164,7 +172,7 @@ export function SettingsClient({
           Change Password
         </h2>
 
-        <form onSubmit={handlePasswordChange} className="space-y-4">
+        <form action={passwordAction} className="space-y-4">
           {/* Current password */}
           <div>
             <label
@@ -175,6 +183,7 @@ export function SettingsClient({
             </label>
             <PasswordInput
               id="settings-current-password"
+              name="currentPassword"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Enter current password"
@@ -193,6 +202,7 @@ export function SettingsClient({
             </label>
             <PasswordInput
               id="settings-new-password"
+              name="newPassword"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="At least 6 characters"
@@ -212,6 +222,7 @@ export function SettingsClient({
             </label>
             <PasswordInput
               id="settings-confirm-password"
+              name="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repeat new password"
