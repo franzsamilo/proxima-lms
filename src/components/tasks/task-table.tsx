@@ -25,6 +25,7 @@ export interface TaskRow {
   lessonTitle: string
   studentName?: string
   lessonType: string
+  courseTitle?: string
   status: string
   submittedAt: Date | null
   grade: number | null
@@ -33,9 +34,22 @@ export interface TaskRow {
 export interface TaskTableProps {
   submissions: TaskRow[]
   showStudent?: boolean
+  showCourse?: boolean
 }
 
-export function TaskTable({ submissions, showStudent = false }: TaskTableProps) {
+function PendingLabel() {
+  return (
+    <span className="font-[family-name:var(--font-family-mono)] text-[11px] uppercase tracking-[0.5px] text-ink-ghost">
+      Pending
+    </span>
+  )
+}
+
+export function TaskTable({
+  submissions,
+  showStudent = false,
+  showCourse = false,
+}: TaskTableProps) {
   if (submissions.length === 0) {
     return (
       <div className="py-12 text-center text-ink-tertiary font-[family-name:var(--font-family-body)] text-[13px]">
@@ -54,6 +68,11 @@ export function TaskTable({ submissions, showStudent = false }: TaskTableProps) 
           <p className="font-[family-name:var(--font-family-body)] text-[13px] font-semibold text-ink-primary truncate">
             {row.lessonTitle}
           </p>
+          {showCourse && row.courseTitle && (
+            <p className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary mt-0.5 truncate">
+              {row.courseTitle}
+            </p>
+          )}
           {showStudent && row.studentName && (
             <p className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-secondary mt-0.5">
               {row.studentName}
@@ -63,7 +82,7 @@ export function TaskTable({ submissions, showStudent = false }: TaskTableProps) 
         {row.grade !== null ? (
           <GradeCircle grade={row.grade} className="w-9 h-9 text-[13px] shrink-0" />
         ) : (
-          <span className="text-ink-ghost text-[13px] shrink-0">—</span>
+          <PendingLabel />
         )}
       </div>
       <div className="flex items-center gap-2 flex-wrap">
@@ -89,6 +108,7 @@ export function TaskTable({ submissions, showStudent = false }: TaskTableProps) 
         <tr>
           <DataTableHead>Task</DataTableHead>
           {showStudent && <DataTableHead>Student</DataTableHead>}
+          {showCourse && <DataTableHead>Course</DataTableHead>}
           <DataTableHead>Type</DataTableHead>
           <DataTableHead>Status</DataTableHead>
           <DataTableHead>Submitted</DataTableHead>
@@ -108,6 +128,9 @@ export function TaskTable({ submissions, showStudent = false }: TaskTableProps) 
             </DataTableCell>
             {showStudent && (
               <DataTableCell>{row.studentName ?? "—"}</DataTableCell>
+            )}
+            {showCourse && (
+              <DataTableCell>{row.courseTitle ?? "—"}</DataTableCell>
             )}
             <DataTableCell>
               <Badge variant={lessonTypeVariantMap[row.lessonType] ?? "neutral"}>
@@ -130,7 +153,7 @@ export function TaskTable({ submissions, showStudent = false }: TaskTableProps) 
               {row.grade !== null ? (
                 <GradeCircle grade={row.grade} className="w-9 h-9 text-[13px]" />
               ) : (
-                <span className="text-ink-ghost">—</span>
+                <PendingLabel />
               )}
             </DataTableCell>
           </DataTableRow>

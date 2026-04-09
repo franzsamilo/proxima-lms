@@ -16,7 +16,7 @@ export default async function PackagesPage() {
           id: true,
           modules: {
             select: {
-              lessons: { select: { id: true } },
+              _count: { select: { lessons: true } },
             },
           },
         },
@@ -25,11 +25,14 @@ export default async function PackagesPage() {
   })
 
   const packageData = packages.map((pkg) => {
-    const courseCount = pkg.courses.length
+    const moduleCount = pkg.courses.reduce(
+      (acc, course) => acc + course.modules.length,
+      0
+    )
     const lessonCount = pkg.courses.reduce(
       (acc, course) =>
         acc +
-        course.modules.reduce((mAcc, mod) => mAcc + mod.lessons.length, 0),
+        course.modules.reduce((mAcc, mod) => mAcc + mod._count.lessons, 0),
       0
     )
     return {
@@ -40,7 +43,7 @@ export default async function PackagesPage() {
       price: pkg.price,
       description: pkg.description,
       includes: pkg.includes,
-      courseCount,
+      moduleCount,
       lessonCount,
     }
   })

@@ -53,7 +53,7 @@ export function ModuleAccordion({
         <ChevronDown
           size={16}
           className={`text-ink-tertiary transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
+            isOpen ? "rotate-90" : ""
           }`}
         />
       </button>

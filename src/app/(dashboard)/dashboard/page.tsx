@@ -174,7 +174,7 @@ export default async function DashboardPage() {
           ? getTeacherStats(user.id)
           : getAdminStats(),
       prisma.announcement.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
         take: 5,
         select: {
           id: true,

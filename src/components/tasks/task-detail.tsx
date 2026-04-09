@@ -97,35 +97,78 @@ export function TaskDetail({ submission }: TaskDetailProps) {
       <Card>
         <CardHeader>Submission</CardHeader>
 
-        {lesson.type === "CODE" && submission.codeContent ? (
-          <CodeViewer code={submission.codeContent} language="code" />
-        ) : lesson.type === "VIDEO" && submission.videoUrl ? (
-          <VideoPlayer src={submission.videoUrl} title={lesson.title} />
-        ) : lesson.type === "QUIZ" && submission.quizAnswers ? (
-          <div className="space-y-3">
-            {Object.entries(submission.quizAnswers).map(([question, answer]) => (
-              <div key={question} className="space-y-1">
-                <p className="font-[family-name:var(--font-family-mono)] text-[11px] uppercase tracking-[1px] text-ink-ghost">
-                  {question}
-                </p>
-                <p className="text-[13px] text-ink-primary bg-surface-3 rounded-[var(--radius-md)] px-3 py-2">
-                  {answer}
-                </p>
+        {(() => {
+          if (lesson.type === "CODE" && submission.codeContent) {
+            return <CodeViewer code={submission.codeContent} language="python" />
+          }
+          if (lesson.type === "VIDEO" && submission.videoUrl) {
+            return <VideoPlayer src={submission.videoUrl} title={lesson.title} />
+          }
+          if (lesson.type === "QUIZ" && submission.quizAnswers) {
+            return (
+              <div className="space-y-3">
+                {Object.entries(submission.quizAnswers).map(([question, answer]) => (
+                  <div key={question} className="space-y-1">
+                    <p className="font-[family-name:var(--font-family-mono)] text-[11px] uppercase tracking-[1px] text-ink-ghost">
+                      {question}
+                    </p>
+                    <p className="text-[13px] text-ink-primary bg-surface-3 rounded-[var(--radius-md)] px-3 py-2">
+                      {answer}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : submission.fileUrl ? (
-          <a
-            href={submission.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-signal hover:underline text-[13px] font-medium"
-          >
-            View submitted file
-          </a>
-        ) : (
-          <p className="text-[13px] text-ink-ghost">No submission content available.</p>
-        )}
+            )
+          }
+          if (lesson.type === "TASK") {
+            const hasAny =
+              submission.codeContent || submission.videoUrl || submission.fileUrl
+            if (!hasAny) {
+              return (
+                <p className="text-[13px] text-ink-ghost">
+                  No submission content available.
+                </p>
+              )
+            }
+            return (
+              <div className="space-y-4">
+                {submission.codeContent && (
+                  <CodeViewer code={submission.codeContent} language="python" />
+                )}
+                {submission.videoUrl && (
+                  <VideoPlayer src={submission.videoUrl} title={lesson.title} />
+                )}
+                {submission.fileUrl && (
+                  <a
+                    href={submission.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-signal hover:underline text-[13px] font-medium"
+                  >
+                    Download attachment
+                  </a>
+                )}
+              </div>
+            )
+          }
+          if (submission.fileUrl) {
+            return (
+              <a
+                href={submission.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-signal hover:underline text-[13px] font-medium"
+              >
+                View submitted file
+              </a>
+            )
+          }
+          return (
+            <p className="text-[13px] text-ink-ghost">
+              No submission content available.
+            </p>
+          )
+        })()}
       </Card>
 
       {/* Grade + feedback */}

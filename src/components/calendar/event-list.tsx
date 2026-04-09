@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { Card, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,20 +21,24 @@ interface EventListProps {
   canDelete?: boolean
 }
 
-const eventTypeBadgeVariant: Record<string, "warning" | "danger" | "info"> = {
+const eventTypeBadgeVariant: Record<string, "warning" | "danger" | "signal"> = {
   deadline: "warning",
   exam: "danger",
-  event: "info",
+  event: "signal",
 }
 
 export function EventList({ events, canDelete = false }: EventListProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<CalendarEvent | null>(null)
 
   async function handleDelete(eventId: string) {
     setDeletingId(eventId)
-    await deleteEvent(eventId)
+    const result = await deleteEvent(eventId)
     setDeletingId(null)
+    if (!("error" in result)) {
+      router.refresh()
+    }
   }
 
   return (

@@ -14,6 +14,7 @@ export async function gradeSubmission(submissionId: string, formData: FormData) 
     include: { lesson: { include: { module: true } } },
   })
   if (!existing) return { error: "Submission not found" }
+  if (existing.status === "GRADED") return { error: "Already graded" }
 
   const parsed = gradeTaskSchema.safeParse({
     grade: Number(formData.get("grade")),

@@ -12,6 +12,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const month = searchParams.get("month") // YYYY-MM
 
+  // Validate ?month=YYYY-MM (regex — reject 2026-13, 2026-AA, etc.)
+  if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    return NextResponse.json(
+      { error: "Invalid month format, expected YYYY-MM" },
+      { status: 400 }
+    )
+  }
+
   // Get courses the user is associated with
   let courseIds: string[] = []
   const userRole = session.user.role
@@ -32,7 +40,10 @@ export async function GET(request: Request) {
 
   const where: Record<string, unknown> = {}
 
-  // Filter by user's courses + null courseId events
+  // Filter by user's courses + null courseId events.
+  // Defensive: any non-ADMIN (including undefined/unknown roles) is scoped
+  // to their course list + global events. Unknown role with empty courseIds
+  // sees only global events.
   if (userRole !== "ADMIN") {
     where.OR = [
       { courseId: null },

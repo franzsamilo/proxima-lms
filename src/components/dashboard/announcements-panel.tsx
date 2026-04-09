@@ -1,11 +1,13 @@
 import { Card, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { RelativeTime } from "@/components/ui/relative-time"
+import type { AnnouncementPriority } from "@prisma/client"
 
 interface AnnouncementItem {
   id: string
   title: string
   content: string
-  priority: string
+  priority: AnnouncementPriority
   createdAt: Date | string
 }
 
@@ -13,19 +15,16 @@ interface AnnouncementsPanelProps {
   announcements: AnnouncementItem[]
 }
 
-function relativeTime(date: Date | string): string {
-  const now = new Date()
-  const then = new Date(date)
-  const diffMs = now.getTime() - then.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  if (diffMins < 1) return "just now"
-  if (diffMins < 60) return `${diffMins}m ago`
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffDays < 30) return `${diffDays}d ago`
-  const diffMonths = Math.floor(diffDays / 30)
-  return `${diffMonths}mo ago`
+const priorityBadgeVariant: Record<AnnouncementPriority, "danger" | "info" | "neutral"> = {
+  HIGH: "danger",
+  NORMAL: "info",
+  LOW: "neutral",
+}
+
+const priorityLabel: Record<AnnouncementPriority, string> = {
+  HIGH: "High",
+  NORMAL: "Normal",
+  LOW: "Low",
 }
 
 export function AnnouncementsPanel({ announcements }: AnnouncementsPanelProps) {
@@ -36,14 +35,10 @@ export function AnnouncementsPanel({ announcements }: AnnouncementsPanelProps) {
         <p className="text-[13px] text-ink-tertiary">No announcements yet.</p>
       ) : (
         <div>
-          {announcements.map((item, i) => (
+          {announcements.map((item) => (
             <div
               key={item.id}
-              className={
-                i < announcements.length - 1
-                  ? "pb-3 mb-3 border-b border-edge"
-                  : ""
-              }
+              className="py-3 border-b border-edge last:border-0 px-5"
             >
               <p className="font-[family-name:var(--font-family-body)] text-[14px] font-semibold text-ink-primary">
                 {item.title}
@@ -52,11 +47,11 @@ export function AnnouncementsPanel({ announcements }: AnnouncementsPanelProps) {
                 {item.content}
               </p>
               <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant={item.priority === "HIGH" ? "danger" : "neutral"}>
-                  {item.priority.toLowerCase()}
+                <Badge variant={priorityBadgeVariant[item.priority]}>
+                  {priorityLabel[item.priority]}
                 </Badge>
                 <span className="text-[12px] text-ink-tertiary">
-                  {relativeTime(item.createdAt)}
+                  <RelativeTime iso={typeof item.createdAt === "string" ? item.createdAt : item.createdAt.toISOString()} />
                 </span>
               </div>
             </div>

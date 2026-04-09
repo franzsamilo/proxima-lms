@@ -1,10 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import Editor from "@monaco-editor/react"
+import Editor, { type BeforeMount } from "@monaco-editor/react"
 import { submitTask } from "@/actions/task-actions"
 import { Button } from "@/components/ui/button"
 import { Send } from "lucide-react"
+
+const handleBeforeMount: BeforeMount = (monaco) => {
+  monaco.editor.defineTheme("proxima-dark", {
+    base: "vs-dark",
+    inherit: true,
+    rules: [],
+    colors: { "editor.background": "#0D1117" },
+  })
+}
 
 interface CodeEditorProps {
   codeSkeleton?: string
@@ -87,23 +96,14 @@ export function CodeEditor({
           defaultLanguage="python"
           value={code}
           onChange={(val) => setCode(val ?? "")}
-          theme="vs-dark"
+          beforeMount={handleBeforeMount}
+          theme="proxima-dark"
           options={{
             fontSize: 14,
             fontFamily: "var(--font-family-mono)",
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
             padding: { top: 16, bottom: 16 },
-          }}
-          onMount={(editor, monaco) => {
-            // Override background to match Observatory theme
-            monaco.editor.defineTheme("proxima-dark", {
-              base: "vs-dark",
-              inherit: true,
-              rules: [],
-              colors: { "editor.background": "#0D1117" },
-            })
-            monaco.editor.setTheme("proxima-dark")
           }}
         />
       </div>

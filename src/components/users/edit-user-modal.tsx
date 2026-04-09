@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { Modal } from "@/components/ui/modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,8 @@ interface EditUserModalProps {
 }
 
 export function EditUserModal({ open, onClose, user }: EditUserModalProps) {
+  const router = useRouter()
+  const [name, setName] = React.useState("")
   const [role, setRole] = React.useState("")
   const [department, setDepartment] = React.useState("")
   const [schoolLevel, setSchoolLevel] = React.useState("")
@@ -26,6 +29,7 @@ export function EditUserModal({ open, onClose, user }: EditUserModalProps) {
 
   React.useEffect(() => {
     if (user) {
+      setName(user.name)
       setRole(user.role)
       setDepartment(user.department ?? "")
       setSchoolLevel(user.schoolLevel ?? "")
@@ -37,11 +41,12 @@ export function EditUserModal({ open, onClose, user }: EditUserModalProps) {
 
     setIsPending(true)
     const formData = new FormData()
+    formData.set("name", name)
     formData.set("role", role)
+    // Always send department — empty string is coerced to null by the action.
     formData.set("department", department)
-    if (schoolLevel) {
-      formData.set("schoolLevel", schoolLevel)
-    }
+    // Always send schoolLevel — "" means "— None —" (null); action coerces.
+    formData.set("schoolLevel", schoolLevel)
 
     const result = await updateUser(user.id, formData)
 
@@ -53,6 +58,7 @@ export function EditUserModal({ open, onClose, user }: EditUserModalProps) {
       showToast(msg, "error")
     } else {
       showToast("User updated successfully.", "success")
+      router.refresh()
       onClose()
     }
     setIsPending(false)
@@ -89,6 +95,22 @@ export function EditUserModal({ open, onClose, user }: EditUserModalProps) {
                 {user.email}
               </p>
             </div>
+          </div>
+
+          {/* Name input */}
+          <div>
+            <label
+              htmlFor="user-name"
+              className="block font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-1.5"
+            >
+              Name
+            </label>
+            <Input
+              id="user-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Full name"
+            />
           </div>
 
           {/* Role select */}
