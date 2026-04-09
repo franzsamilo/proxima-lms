@@ -91,6 +91,21 @@ export const createEventSchema = z.object({
     .pipe(z.string().cuid().optional()),
 })
 
+export const assignKitSchema = z.object({
+  kitId: z.string().cuid(),
+  userId: z.string().cuid(),
+})
+
+export const createKitSchema = z.object({
+  name: z.string().min(2).max(100),
+  level: z.enum(["ELEMENTARY", "HS", "COLLEGE"]),
+  specs: z.string().min(5),
+  totalQty: z.number().int().min(1).max(500),
+  imageEmoji: z.string().min(1).max(8).default("🤖"),
+})
+
+export const updateKitSchema = createKitSchema.partial()
+
 export const updateUserSchema = z.object({
   name: z.string().min(2).optional(),
   role: z.enum(["STUDENT", "TEACHER", "ADMIN"]).optional(),

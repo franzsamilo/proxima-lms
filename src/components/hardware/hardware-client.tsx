@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import type { SchoolLevel } from "@prisma/client"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KitCard } from "@/components/hardware/kit-card"
@@ -12,12 +13,12 @@ import { returnKit } from "@/actions/hardware-actions"
 interface Kit {
   id: string
   name: string
-  level: string
+  level: SchoolLevel
   specs: string
   totalQty: number
   imageEmoji: string
   activeAssignments: number
-  assignments: { id: string; userName: string }[]
+  assignments: { id: string; userId: string; userName: string }[]
 }
 
 interface Student {
@@ -76,7 +77,9 @@ export function HardwareClient({ kits, students, isAdmin }: HardwareClientProps)
                 action={
                   <AssignKitTrigger
                     kit={{ id: kit.id, name: kit.name }}
-                    students={students}
+                    students={students.filter(
+                      (s) => !kit.assignments.some((a) => a.userId === s.id)
+                    )}
                   />
                 }
               />

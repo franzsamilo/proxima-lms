@@ -1,4 +1,5 @@
 import * as React from "react"
+import type { SchoolLevel } from "@prisma/client"
 import { Card } from "@/components/ui/card"
 import { LevelBadge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/ui/progress-bar"
@@ -8,7 +9,7 @@ export interface KitCardData {
   name: string
   emoji: string
   specs: string
-  level: string
+  level: SchoolLevel
   totalQty: number
   assignedCount: number
 }
@@ -19,9 +20,11 @@ interface KitCardProps {
 }
 
 export function KitCard({ kit, action }: KitCardProps) {
-  const available = kit.totalQty - kit.assignedCount
+  const available = Math.max(0, kit.totalQty - kit.assignedCount)
   const assignedRatio =
-    kit.totalQty > 0 ? (kit.assignedCount / kit.totalQty) * 100 : 0
+    kit.totalQty > 0
+      ? Math.min(100, Math.max(0, (kit.assignedCount / kit.totalQty) * 100))
+      : 0
 
   return (
     <Card className="flex flex-col gap-4 border border-edge">

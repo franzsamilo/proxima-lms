@@ -1,19 +1,31 @@
-import { getCurrentUser } from "@/lib/auth-helpers"
+import { requireRole } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { HardwareClient } from "@/components/hardware/hardware-client"
 
+async function loadUser() {
+  try {
+    return await requireRole(["TEACHER", "ADMIN"])
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unauthorized"
+    if (message === "Forbidden") redirect("/dashboard")
+    redirect("/login")
+  }
+}
+
 export default async function HardwarePage() {
-  const user = await getCurrentUser()
-  if (!user) redirect("/login")
-  if (user.role === "STUDENT") redirect("/dashboard")
+  const user = await loadUser()
 
   const kits = await prisma.hardwareKit.findMany({
     orderBy: { name: "asc" },
     include: {
       assignments: {
         where: { returnedAt: null },
-        select: { id: true, user: { select: { id: true, name: true } } },
+        select: {
+          id: true,
+          userId: true,
+          user: { select: { id: true, name: true } },
+        },
       },
     },
   })
@@ -34,6 +46,7 @@ export default async function HardwarePage() {
     activeAssignments: kit.assignments.length,
     assignments: kit.assignments.map((a) => ({
       id: a.id,
+      userId: a.userId,
       userName: a.user.name,
     })),
   }))

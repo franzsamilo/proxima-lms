@@ -229,7 +229,7 @@ model HardwareAssignment {
   userId      String
   user        User        @relation(fields: [userId], references: [id])
 
-  @@unique([kitId, userId])
+  @@index([kitId, userId])
 }
 
 model Announcement {

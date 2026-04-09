@@ -1,8 +1,9 @@
 "use server"
 
-import { requireRole } from "@/lib/auth-helpers"
+import { requireRole, requireAuth } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { createKitSchema, updateKitSchema } from "@/lib/validations"
 
 export async function assignKit(formData: FormData) {
   await requireRole(["TEACHER", "ADMIN"])
@@ -12,8 +13,12 @@ export async function assignKit(formData: FormData) {
 
   if (!kitId || !userId) return { error: "kitId and userId are required" }
 
-  const kit = await prisma.hardwareKit.findUnique({ where: { id: kitId } })
+  const [kit, user] = await Promise.all([
+    prisma.hardwareKit.findUnique({ where: { id: kitId } }),
+    prisma.user.findUnique({ where: { id: userId } }),
+  ])
   if (!kit) return { error: "Hardware kit not found" }
+  if (!user) return { error: "User not found" }
 
   const activeAssignments = await prisma.hardwareAssignment.count({
     where: { kitId, returnedAt: null },
@@ -40,13 +45,22 @@ export async function assignKit(formData: FormData) {
 }
 
 export async function returnKit(assignmentId: string) {
-  await requireRole(["TEACHER", "ADMIN"])
+  const sessionUser = await requireAuth()
+  const role = (sessionUser as { role?: string }).role
+  if (role !== "TEACHER" && role !== "ADMIN" && role !== "STUDENT") {
+    return { error: "Forbidden" }
+  }
 
   const existing = await prisma.hardwareAssignment.findUnique({
     where: { id: assignmentId },
   })
 
   if (!existing) return { error: "Assignment not found" }
+
+  // Students can only return their own kits.
+  if (role === "STUDENT" && existing.userId !== sessionUser.id) {
+    return { error: "Forbidden" }
+  }
 
   if (existing.returnedAt) {
     return { error: "Kit has already been returned" }
@@ -64,19 +78,22 @@ export async function returnKit(assignmentId: string) {
 export async function createKit(formData: FormData) {
   await requireRole(["ADMIN"])
 
-  const name = formData.get("name") as string
-  const level = formData.get("level") as string
-  const specs = formData.get("specs") as string
-  const totalQty = Number(formData.get("totalQty"))
-  const imageEmoji = (formData.get("imageEmoji") as string) || "🤖"
+  const totalQtyRaw = formData.get("totalQty")
+  const totalQty = totalQtyRaw === null ? NaN : Number(totalQtyRaw)
 
-  if (!name || !level || !specs || !totalQty) {
-    return { error: "All fields are required" }
+  const parsed = createKitSchema.safeParse({
+    name: formData.get("name") ?? undefined,
+    level: formData.get("level") ?? undefined,
+    specs: formData.get("specs") ?? undefined,
+    totalQty: Number.isNaN(totalQty) ? undefined : totalQty,
+    imageEmoji: (formData.get("imageEmoji") as string) || "🤖",
+  })
+
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
   }
 
-  await prisma.hardwareKit.create({
-    data: { name, level: level as any, specs, totalQty, imageEmoji },
-  })
+  await prisma.hardwareKit.create({ data: parsed.data })
 
   revalidatePath("/hardware")
   return { success: true }
@@ -88,24 +105,37 @@ export async function updateKit(kitId: string, formData: FormData) {
   const existing = await prisma.hardwareKit.findUnique({ where: { id: kitId } })
   if (!existing) return { error: "Kit not found" }
 
-  const updateData: Record<string, unknown> = {}
+  const totalQtyRaw = formData.get("totalQty")
+  const totalQtyParsed = totalQtyRaw === null ? undefined : Number(totalQtyRaw)
 
-  const name = formData.get("name")
-  if (name !== null) updateData.name = String(name)
+  const parsed = updateKitSchema.safeParse({
+    name: formData.get("name") ?? undefined,
+    level: formData.get("level") ?? undefined,
+    specs: formData.get("specs") ?? undefined,
+    totalQty:
+      totalQtyParsed === undefined || Number.isNaN(totalQtyParsed)
+        ? undefined
+        : totalQtyParsed,
+    imageEmoji: formData.get("imageEmoji") ?? undefined,
+  })
 
-  const level = formData.get("level")
-  if (level !== null) updateData.level = String(level)
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
 
-  const specs = formData.get("specs")
-  if (specs !== null) updateData.specs = String(specs)
+  // Data integrity: prevent dropping totalQty below current active assignments.
+  if (parsed.data.totalQty !== undefined) {
+    const activeCount = await prisma.hardwareAssignment.count({
+      where: { kitId, returnedAt: null },
+    })
+    if (parsed.data.totalQty < activeCount) {
+      return {
+        error: `totalQty cannot be less than current active assignments (${activeCount})`,
+      }
+    }
+  }
 
-  const totalQty = formData.get("totalQty")
-  if (totalQty !== null) updateData.totalQty = Number(totalQty)
-
-  const imageEmoji = formData.get("imageEmoji")
-  if (imageEmoji !== null) updateData.imageEmoji = String(imageEmoji)
-
-  await prisma.hardwareKit.update({ where: { id: kitId }, data: updateData })
+  await prisma.hardwareKit.update({ where: { id: kitId }, data: parsed.data })
 
   revalidatePath("/hardware")
   return { success: true }

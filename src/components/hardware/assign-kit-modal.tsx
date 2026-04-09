@@ -49,7 +49,14 @@ export function AssignKitModal({ open, onClose, kit, students }: AssignKitModalP
     const result = await assignKit(formData)
 
     if (result?.error) {
-      showToast(typeof result.error === "string" ? result.error : "Failed to assign kit.", "error")
+      const err = result.error as unknown
+      const message =
+        typeof err === "string"
+          ? err
+          : err && typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string"
+            ? (err as { message: string }).message
+            : "Failed to assign kit."
+      showToast(message, "error")
     } else {
       showToast(`Kit assigned successfully.`, "success")
       setSelectedStudentId("")
@@ -94,18 +101,24 @@ export function AssignKitModal({ open, onClose, kit, students }: AssignKitModalP
             >
               Assign To
             </label>
-            <Select
-              id="student-select"
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-            >
-              <option value="">Select a student…</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {s.email}
-                </option>
-              ))}
-            </Select>
+            {students.length === 0 ? (
+              <p className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary px-3 py-2 bg-surface-3 border border-edge rounded-[var(--radius-md)]">
+                All students currently hold this kit. Return one before assigning again.
+              </p>
+            ) : (
+              <Select
+                id="student-select"
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+              >
+                <option value="">Select a student…</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — {s.email}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
         </div>
       </Modal>
