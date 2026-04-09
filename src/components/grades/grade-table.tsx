@@ -26,13 +26,15 @@ export interface GradeRow {
   submittedAt: Date | null
   grade: number
   feedback: string | null
+  studentName?: string
 }
 
 export interface GradeTableProps {
   grades: GradeRow[]
+  showStudent?: boolean
 }
 
-export function GradeTable({ grades }: GradeTableProps) {
+export function GradeTable({ grades, showStudent = false }: GradeTableProps) {
   if (grades.length === 0) {
     return (
       <div className="py-12 text-center text-ink-tertiary font-[family-name:var(--font-family-body)] text-[13px]">
@@ -51,6 +53,11 @@ export function GradeTable({ grades }: GradeTableProps) {
           <p className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-secondary mt-0.5">
             {row.courseTitle}
           </p>
+          {showStudent && row.studentName && (
+            <p className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary mt-0.5">
+              {row.studentName}
+            </p>
+          )}
         </div>
         <GradeCircle grade={row.grade} className="w-9 h-9 text-[13px] shrink-0" />
       </div>
@@ -81,6 +88,7 @@ export function GradeTable({ grades }: GradeTableProps) {
         <tr>
           <DataTableHead>Task</DataTableHead>
           <DataTableHead>Course</DataTableHead>
+          {showStudent && <DataTableHead>Student</DataTableHead>}
           <DataTableHead>Type</DataTableHead>
           <DataTableHead>Submitted</DataTableHead>
           <DataTableHead>Grade</DataTableHead>
@@ -92,6 +100,9 @@ export function GradeTable({ grades }: GradeTableProps) {
           <DataTableRow key={row.id}>
             <DataTableCell primary>{row.lessonTitle}</DataTableCell>
             <DataTableCell>{row.courseTitle}</DataTableCell>
+            {showStudent && (
+              <DataTableCell>{row.studentName ?? "—"}</DataTableCell>
+            )}
             <DataTableCell>
               <Badge variant={lessonTypeVariantMap[row.lessonType] ?? "neutral"}>
                 {row.lessonType}

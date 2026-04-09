@@ -1,10 +1,8 @@
+import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { getToken } from "next-auth/jwt"
 
-export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET })
-  const isLoggedIn = !!token
+export default auth((req) => {
+  const isLoggedIn = !!req.auth
   const path = req.nextUrl.pathname
   const isAuthPage = path.startsWith("/login") || path.startsWith("/register")
   const isProtected =
@@ -22,14 +20,14 @@ export async function middleware(req: NextRequest) {
   if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.nextUrl))
   }
-
   if (isAuthPage && isLoggedIn) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
   }
-
-  return NextResponse.next()
-}
+  const res = NextResponse.next()
+  res.headers.set("x-pathname", path)
+  return res
+})
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.svg).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|logo.svg).*)"],
 }

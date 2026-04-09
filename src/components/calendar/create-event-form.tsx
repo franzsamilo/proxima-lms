@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Modal } from "@/components/ui/modal"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
@@ -19,9 +20,17 @@ interface CreateEventFormProps {
 }
 
 export function CreateEventForm({ open, onClose, courses }: CreateEventFormProps) {
+  const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Server-free local "today" (YYYY-MM-DD) for the date input min attribute.
+  // The real past-date guard lives in the Zod schema on the server.
+  const today = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -36,13 +45,18 @@ export function CreateEventForm({ open, onClose, courses }: CreateEventFormProps
     setPending(false)
 
     if ("error" in result && result.error) {
-      const errs = result.error as Record<string, string[] | undefined>
+      const rawErr: unknown = result.error
+      const errs =
+        typeof rawErr === "string"
+          ? { _: [rawErr] }
+          : (rawErr as Record<string, string[] | undefined>)
       const first = Object.values(errs).flat()[0]
       setError(first ?? "Failed to create event.")
       return
     }
 
     formRef.current.reset()
+    router.refresh()
     onClose()
   }
 
@@ -99,6 +113,7 @@ export function CreateEventForm({ open, onClose, courses }: CreateEventFormProps
             name="date"
             type="date"
             required
+            min={today}
           />
         </div>
 

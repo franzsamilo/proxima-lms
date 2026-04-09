@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { Check } from "lucide-react"
 import { LevelBadge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,10 +12,16 @@ interface PackageCardProps {
     price: number
     description?: string | null
     includes: string[]
-    courseCount: number
+    moduleCount: number
     lessonCount: number
   }
 }
+
+const priceFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+})
 
 const tierTopBorder: Record<string, string> = {
   ELEMENTARY: "border-t-success",
@@ -53,8 +58,8 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
   return (
     <div
       className={cn(
-        "bg-surface-2 border border-edge border-t-[3px] rounded-[var(--radius-lg)] p-6 flex flex-col gap-4",
-        "transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[var(--shadow-elevated)] hover:border-edge-strong",
+        "bg-surface-2 border-t-[3px] rounded-[var(--radius-lg)] p-6 flex flex-col gap-4 shadow-[var(--shadow-card)]",
+        "transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[var(--shadow-elevated)]",
         topBorderClass
       )}
     >
@@ -82,7 +87,7 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
             priceColorClass
           )}
         >
-          ₱{pkg.price.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {priceFormatter.format(pkg.price)}
         </span>
         <span className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary ml-1">
           / package
@@ -93,10 +98,10 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-surface-3 rounded-[var(--radius-md)] py-3 px-4 flex flex-col items-center justify-center gap-1">
           <span className="font-[family-name:var(--font-family-mono)] text-[20px] font-bold text-ink-primary leading-none">
-            {pkg.courseCount}
+            {pkg.moduleCount}
           </span>
           <span className="font-[family-name:var(--font-family-mono)] text-[10px] uppercase tracking-[0.5px] text-ink-tertiary">
-            Courses
+            Modules
           </span>
         </div>
         <div className="bg-surface-3 rounded-[var(--radius-md)] py-3 px-4 flex flex-col items-center justify-center gap-1">
@@ -126,13 +131,11 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
         </div>
       )}
 
-      {/* Browse courses button */}
+      {/* Subscribe button */}
       <div className="mt-auto pt-2">
-        <Link href={`/courses?level=${pkg.level}`}>
-          <Button className="w-full" variant="primary">
-            Browse Courses
-          </Button>
-        </Link>
+        <Button className="w-full" variant="primary">
+          Subscribe
+        </Button>
       </div>
     </div>
   )

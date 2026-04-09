@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   title: "Proxima LMS",
   description: "Robotics & Technical Education Learning Management System",
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/logo.svg",
+    apple: "/logo.svg",
   },
 }
 

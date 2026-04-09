@@ -24,7 +24,7 @@ export default async function LessonPage(props: {
       module: {
         include: {
           course: {
-            select: { id: true, title: true, level: true },
+            select: { id: true, title: true, level: true, instructorId: true },
           },
         },
       },
@@ -32,6 +32,25 @@ export default async function LessonPage(props: {
   })
 
   if (!lesson) notFound()
+
+  // Positive allow-list: admin, instructor of course, or enrolled student
+  const isAdmin = user.role === "ADMIN"
+  const isInstructor = lesson.module.course.instructorId === user.id
+  let isEnrolled = false
+  if (!isAdmin && !isInstructor) {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        studentId_courseId: {
+          studentId: user.id,
+          courseId: lesson.module.course.id,
+        },
+      },
+    })
+    isEnrolled = enrollment !== null
+  }
+  if (!isAdmin && !isInstructor && !isEnrolled) {
+    notFound()
+  }
 
   // Fetch existing submission for students
   let submission = null

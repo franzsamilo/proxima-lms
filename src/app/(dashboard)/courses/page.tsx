@@ -5,51 +5,57 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CourseList } from "@/components/courses/course-list"
+import type { Prisma, SchoolLevel } from "@prisma/client"
 
-export default async function CoursesPage() {
+const ALLOWED_LEVELS = ["ELEMENTARY", "HS", "COLLEGE"] as const
+
+export default async function CoursesPage(props: {
+  searchParams: Promise<{ level?: string; search?: string }>
+}) {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
-  const courseInclude = {
-    instructor: { select: { name: true } },
-    modules: {
-      select: { id: true, lessons: { select: { id: true } } },
-    },
-    enrollments: {
-      select: { id: true, progress: true, studentId: true },
-    },
-    _count: { select: { enrollments: true } },
+  const { level, search } = await props.searchParams
+  const normalizedLevel =
+    level && (ALLOWED_LEVELS as readonly string[]).includes(level)
+      ? (level as SchoolLevel)
+      : undefined
+  const normalizedSearch = search?.trim() || undefined
+
+  const where: Prisma.CourseWhereInput = {}
+
+  if (normalizedLevel) {
+    where.level = normalizedLevel
   }
 
-  let courses
+  if (normalizedSearch) {
+    where.OR = [
+      { title: { contains: normalizedSearch, mode: "insensitive" } },
+      { description: { contains: normalizedSearch, mode: "insensitive" } },
+    ]
+  }
 
   if (user.role === "STUDENT") {
-    // Students see courses they're enrolled in
-    const enrollments = await prisma.enrollment.findMany({
-      where: { studentId: user.id },
-      select: { courseId: true },
-    })
-    const courseIds = enrollments.map((e) => e.courseId)
-
-    courses = await prisma.course.findMany({
-      where: { id: { in: courseIds } },
-      include: courseInclude,
-      orderBy: { updatedAt: "desc" },
-    })
+    where.enrollments = { some: { studentId: user.id } }
   } else if (user.role === "TEACHER") {
-    // Teachers see their own courses
-    courses = await prisma.course.findMany({
-      where: { instructorId: user.id },
-      include: courseInclude,
-      orderBy: { updatedAt: "desc" },
-    })
-  } else {
-    // Admins see all courses
-    courses = await prisma.course.findMany({
-      include: courseInclude,
-      orderBy: { updatedAt: "desc" },
-    })
+    where.instructorId = user.id
   }
+  // ADMIN: no extra scope
+
+  const courses = await prisma.course.findMany({
+    where,
+    include: {
+      instructor: { select: { name: true } },
+      modules: {
+        select: { id: true, lessons: { select: { id: true } } },
+      },
+      enrollments: {
+        select: { id: true, progress: true, studentId: true },
+      },
+      _count: { select: { enrollments: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  })
 
   const canCreate = user.role === "TEACHER" || user.role === "ADMIN"
 
@@ -68,6 +74,29 @@ export default async function CoursesPage() {
           </Link>
         )}
       </div>
+
+      <form
+        method="GET"
+        className="mb-6 flex flex-col sm:flex-row gap-2"
+      >
+        <input
+          name="search"
+          defaultValue={normalizedSearch ?? ""}
+          placeholder="Search courses..."
+          className="flex-1 bg-surface-3 border border-edge rounded-[var(--radius-md)] px-3 py-2 text-[13px] text-ink-primary placeholder:text-ink-ghost focus:outline-none focus:border-edge-strong"
+        />
+        <select
+          name="level"
+          defaultValue={normalizedLevel ?? ""}
+          className="bg-surface-3 border border-edge rounded-[var(--radius-md)] px-3 py-2 text-[13px] text-ink-primary focus:outline-none focus:border-edge-strong"
+        >
+          <option value="">All levels</option>
+          <option value="ELEMENTARY">Elementary</option>
+          <option value="HS">High School</option>
+          <option value="COLLEGE">College</option>
+        </select>
+        <Button type="submit">Filter</Button>
+      </form>
 
       <CourseList courses={courses} currentUserId={user.id} />
     </div>

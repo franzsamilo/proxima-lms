@@ -1,57 +1,68 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { revalidatePath } from "next/cache"
+import { requireRole } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
+import { assignKitSchema } from "@/lib/validations"
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    await requireRole(["TEACHER", "ADMIN"])
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unauthorized"
+    const status = message === "Forbidden" ? 403 : 401
+    return NextResponse.json({ error: message }, { status })
   }
 
-  const userRole = session.user.role
-  if (userRole !== "TEACHER" && userRole !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
-  const body = await request.json()
-  const { kitId, userId } = body
-
-  if (!kitId || !userId) {
+  const parsed = assignKitSchema.safeParse(body)
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "kitId and userId are required" },
+      { errors: parsed.error.flatten().fieldErrors },
       { status: 400 }
     )
   }
 
-  const kit = await prisma.hardwareKit.findUnique({
-    where: { id: kitId },
-    include: {
-      _count: {
-        select: {
-          assignments: { where: { returnedAt: null } },
-        },
-      },
-    },
-  })
+  const { kitId, userId } = parsed.data
+
+  const [kit, user] = await Promise.all([
+    prisma.hardwareKit.findUnique({ where: { id: kitId } }),
+    prisma.user.findUnique({ where: { id: userId } }),
+  ])
 
   if (!kit) {
     return NextResponse.json({ error: "Kit not found" }, { status: 404 })
   }
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  }
 
-  // Check availability
-  if (kit._count.assignments >= kit.totalQty) {
+  const activeCount = await prisma.hardwareAssignment.count({
+    where: { kitId, returnedAt: null },
+  })
+  if (activeCount >= kit.totalQty) {
+    return NextResponse.json({ error: "Kit fully assigned" }, { status: 409 })
+  }
+
+  const existingActive = await prisma.hardwareAssignment.findFirst({
+    where: { kitId, userId, returnedAt: null },
+  })
+  if (existingActive) {
     return NextResponse.json(
-      { error: "No available units for this kit" },
-      { status: 400 }
+      { error: "User already has this kit assigned" },
+      { status: 409 }
     )
   }
 
   const assignment = await prisma.hardwareAssignment.create({
-    data: {
-      kitId,
-      userId,
-    },
+    data: { kitId, userId },
   })
 
+  revalidatePath("/hardware")
   return NextResponse.json(assignment, { status: 201 })
 }

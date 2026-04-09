@@ -14,10 +14,11 @@ export default async function SettingsPage() {
         { label: "Settings" },
       ]} />
       <SettingsClient
-      initialName={user.name}
-      initialEmail={user.email}
-      initialDepartment={user.department ?? ""}
-    />
+        initialName={user.name}
+        initialEmail={user.email}
+        initialDepartment={user.department ?? ""}
+        userRole={user.role}
+      />
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { updateLessonSchema } from "@/lib/validations"
 
 export async function GET(
   request: Request,
@@ -29,17 +31,19 @@ export async function GET(
   const userId = session.user.id
   const course = lesson.module.course
 
-  // Check access: enrolled student, instructor, or admin
-  if (userRole === "STUDENT") {
+  // Positive allow-list: admin, instructor of course, or enrolled student
+  const isAdmin = userRole === "ADMIN"
+  const isInstructor = course.instructorId === userId
+  let isEnrolled = false
+  if (!isAdmin && !isInstructor) {
     const enrollment = await prisma.enrollment.findUnique({
       where: {
         studentId_courseId: { studentId: userId, courseId: course.id },
       },
     })
-    if (!enrollment) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-  } else if (userRole === "TEACHER" && course.instructorId !== userId) {
+    isEnrolled = enrollment !== null
+  }
+  if (!isAdmin && !isInstructor && !isEnrolled) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -85,10 +89,20 @@ export async function PATCH(
   }
 
   const body = await request.json()
+  const parsed = updateLessonSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { errors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
+  }
+
   const updated = await prisma.lesson.update({
     where: { id: lessonId },
-    data: body,
+    data: parsed.data,
   })
 
+  revalidatePath(`/lessons/${lessonId}`)
+  revalidatePath(`/courses/${lesson.module.courseId}`)
   return NextResponse.json(updated)
 }

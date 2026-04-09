@@ -39,6 +39,17 @@ export function QuizRenderer({
   }
 
   async function handleSubmit() {
+    // Hard validate: every question must have an answer
+    const missing = questions.filter(
+      (q) => !(q.id in answers) || answers[q.id] === undefined || answers[q.id] === ""
+    )
+    if (missing.length > 0) {
+      setError(
+        `Please answer all ${questions.length} questions before submitting (${missing.length} remaining).`
+      )
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 

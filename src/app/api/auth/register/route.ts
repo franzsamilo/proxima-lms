@@ -8,12 +8,18 @@ export async function POST(request: Request) {
   const parsed = registerSchema.safeParse(body)
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
+    return NextResponse.json(
+      { errors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
   }
 
   const exists = await prisma.user.findUnique({ where: { email: parsed.data.email } })
   if (exists) {
-    return NextResponse.json({ error: "Email already registered" }, { status: 409 })
+    return NextResponse.json(
+      { errors: { email: ["Email already registered"] } },
+      { status: 409 }
+    )
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12)

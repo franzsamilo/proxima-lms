@@ -1,4 +1,5 @@
 import * as React from "react"
+import type { SchoolLevel } from "@prisma/client"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = {
@@ -7,6 +8,7 @@ const badgeVariants = {
   warning: "bg-warning-tint text-warning",
   danger: "bg-danger-tint text-danger",
   purple: "bg-purple-tint text-purple",
+  signal: "bg-signal-muted text-signal",
   neutral: "bg-[rgba(94,106,130,0.12)] text-ink-tertiary",
 } as const
 
@@ -48,7 +50,7 @@ const levelLabelMap: Record<string, string> = {
 }
 
 interface LevelBadgeProps extends Omit<BadgeProps, "variant"> {
-  level: string
+  level: SchoolLevel | string
 }
 
 function LevelBadge({ level, children, ...props }: LevelBadgeProps) {

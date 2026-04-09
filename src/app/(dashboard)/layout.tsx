@@ -1,11 +1,40 @@
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import { DashboardShell } from "./dashboard-shell"
+
+const PATH_TITLES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/courses": "Courses",
+  "/lessons": "Lessons",
+  "/tasks": "Tasks",
+  "/grades": "Grades",
+  "/calendar": "Calendar",
+  "/packages": "Lesson Packages",
+  "/hardware": "Hardware Kits",
+  "/users": "Users",
+  "/settings": "Settings",
+}
+
+function pathToTitle(pathname: string): string {
+  if (PATH_TITLES[pathname]) return PATH_TITLES[pathname]
+  const prefix = Object.keys(PATH_TITLES)
+    .filter((p) => pathname === p || pathname.startsWith(`${p}/`))
+    .sort((a, b) => b.length - a.length)[0]
+  return prefix ? PATH_TITLES[prefix] : "Proxima"
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
+
+  const headerStore = await headers()
+  const pathname =
+    headerStore.get("x-pathname") ??
+    headerStore.get("x-invoke-path") ??
+    "/dashboard"
+  const pageTitle = pathToTitle(pathname)
 
   const [announcements, events] = await Promise.all([
     prisma.announcement.findMany({
@@ -25,7 +54,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ...announcements.map((a) => ({
       id: a.id,
       title: a.title,
-      subtitle: a.priority === "high" ? "High priority" : "Announcement",
+      subtitle: a.priority === "HIGH" ? "High priority" : "Announcement",
       time: a.createdAt.toISOString(),
       type: "announcement" as const,
     })),
@@ -39,7 +68,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()).slice(0, 8)
 
   return (
-    <DashboardShell user={JSON.parse(JSON.stringify(user))} notifications={notifications}>
+    <DashboardShell user={JSON.parse(JSON.stringify(user))} notifications={notifications} pageTitle={pageTitle}>
       {children}
     </DashboardShell>
   )

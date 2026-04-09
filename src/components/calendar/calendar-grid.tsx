@@ -14,6 +14,8 @@ interface CalendarGridProps {
   events: CalendarEvent[]
   currentMonth: Date
   onMonthChange: (date: Date) => void
+  /** Server-truth today date as YYYY-MM-DD */
+  today: string
 }
 
 const DAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -32,7 +34,7 @@ function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1).getDay()
 }
 
-export function CalendarGrid({ events, currentMonth, onMonthChange }: CalendarGridProps) {
+export function CalendarGrid({ events, currentMonth, onMonthChange, today }: CalendarGridProps) {
   const year = currentMonth.getFullYear()
   const month = currentMonth.getMonth()
 
@@ -40,10 +42,9 @@ export function CalendarGrid({ events, currentMonth, onMonthChange }: CalendarGr
   const firstDay = getFirstDayOfMonth(year, month)
   const daysInPrevMonth = getDaysInMonth(year, month - 1)
 
-  const today = new Date()
-  const todayYear = today.getFullYear()
-  const todayMonth = today.getMonth()
-  const todayDay = today.getDate()
+  // Parse server-truth "today" (YYYY-MM-DD) to avoid client clock drift / SSR hydration mismatch
+  const [todayYear, todayMonthRaw, todayDay] = today.split("-").map(Number)
+  const todayMonth = todayMonthRaw - 1
 
   const monthName = currentMonth.toLocaleString("en-US", { month: "long" })
 

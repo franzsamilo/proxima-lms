@@ -1,13 +1,9 @@
 "use client"
 
 import * as React from "react"
+import type { GradeTier } from "@/lib/utils"
 
-export interface GradeDistribution {
-  a: number  // 90-100
-  b: number  // 80-89
-  c: number  // 70-79
-  f: number  // <70
-}
+export type GradeDistribution = Record<GradeTier, number>
 
 export interface GradeDistributionChartProps {
   distribution: GradeDistribution
@@ -43,8 +39,11 @@ export function GradeDistributionChart({ distribution }: GradeDistributionChartP
             <div className="flex-1 flex items-center gap-2">
               <div className="flex-1 h-6 bg-surface-3 rounded-[var(--radius-sm)] overflow-hidden">
                 <div
-                  className={`h-full rounded-[var(--radius-sm)] transition-all duration-600 ease-out ${bar.colorClass}`}
-                  style={{ width: pct > 0 ? `${pct}%` : "0%" }}
+                  className={`h-full rounded-[var(--radius-sm)] ease-out ${bar.colorClass}`}
+                  style={{
+                    width: pct > 0 ? `${pct}%` : "0%",
+                    transition: "width 600ms ease-out",
+                  }}
                 />
               </div>
               <span className={`font-[family-name:var(--font-family-mono)] text-[12px] font-bold w-10 text-right ${bar.textClass}`}>

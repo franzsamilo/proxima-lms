@@ -3,70 +3,67 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { TasksClient } from "@/components/tasks/tasks-client"
 import type { TaskRow } from "@/components/tasks/task-table"
+import type { Prisma } from "@prisma/client"
 
-async function getSubmissions(userId: string, role: string) {
-  const select = {
-    id: true,
-    status: true,
-    submittedAt: true,
-    grade: true,
-    lesson: {
-      select: {
-        title: true,
-        type: true,
-      },
-    },
-    student: {
-      select: {
-        name: true,
-      },
-    },
-  }
+type Tab = "all" | "pending" | "graded"
 
-  if (role === "STUDENT") {
-    return prisma.submission.findMany({
-      where: { studentId: userId, status: { not: "DRAFT" } },
-      orderBy: { submittedAt: "desc" },
-      select,
-    })
-  }
-
-  if (role === "TEACHER") {
-    const courses = await prisma.course.findMany({
-      where: { instructorId: userId },
-      select: { id: true },
-    })
-    const courseIds = courses.map((c) => c.id)
-
-    return prisma.submission.findMany({
-      where: {
-        status: { not: "DRAFT" },
-        lesson: { module: { courseId: { in: courseIds } } },
-      },
-      orderBy: { submittedAt: "desc" },
-      select,
-    })
-  }
-
-  // ADMIN
-  return prisma.submission.findMany({
-    where: { status: { not: "DRAFT" } },
-    orderBy: { submittedAt: "desc" },
-    select,
-  })
-}
-
-export default async function TasksPage() {
+export default async function TasksPage(props: {
+  searchParams: Promise<{ tab?: string; courseId?: string }>
+}) {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
-  const rawSubmissions = await getSubmissions(user.id, user.role)
+  const { tab } = await props.searchParams
+  const activeTab: Tab =
+    tab === "pending" || tab === "graded" ? tab : "all"
+
+  const where: Prisma.SubmissionWhereInput = {}
+  if (user.role === "STUDENT") {
+    where.studentId = user.id
+  } else if (user.role === "TEACHER") {
+    where.lesson = { module: { course: { instructorId: user.id } } }
+  }
+  // ADMIN: no additional scoping.
+
+  if (activeTab === "pending") {
+    where.status = { in: ["DRAFT", "SUBMITTED"] }
+  } else if (activeTab === "graded") {
+    where.status = "GRADED"
+  }
+  // "all" → no status filter; DRAFT submissions now visible to students.
+
+  const rawSubmissions = await prisma.submission.findMany({
+    where,
+    orderBy: [
+      { submittedAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+    ],
+    select: {
+      id: true,
+      status: true,
+      submittedAt: true,
+      grade: true,
+      lesson: {
+        select: {
+          title: true,
+          type: true,
+          module: {
+            select: {
+              course: { select: { title: true } },
+            },
+          },
+        },
+      },
+      student: { select: { name: true } },
+    },
+  })
 
   const submissions: TaskRow[] = rawSubmissions.map((s) => ({
     id: s.id,
     lessonTitle: s.lesson.title,
     studentName: s.student.name,
     lessonType: s.lesson.type,
+    courseTitle: s.lesson.module.course.title,
     status: s.status,
     submittedAt: s.submittedAt,
     grade: s.grade,
@@ -80,7 +77,12 @@ export default async function TasksPage() {
         Tasks
       </h1>
 
-      <TasksClient submissions={submissions} showStudent={isTeacherOrAdmin} />
+      <TasksClient
+        submissions={submissions}
+        showStudent={isTeacherOrAdmin}
+        showCourse={isTeacherOrAdmin}
+        activeTab={activeTab}
+      />
     </div>
   )
 }

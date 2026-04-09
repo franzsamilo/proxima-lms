@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { submitTaskSchema } from "@/lib/validations"
+import { submitTaskSchema, tasksQuerySchema } from "@/lib/validations"
 import { Prisma } from "@prisma/client"
 
 export async function GET(request: Request) {
@@ -11,20 +11,25 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const status = searchParams.get("status")
-  const courseId = searchParams.get("courseId")
-
-  const where: Record<string, unknown> = {}
-
-  if (status) {
-    where.status = status
+  const parsed = tasksQuerySchema.safeParse({
+    status: searchParams.get("status") ?? undefined,
+    courseId: searchParams.get("courseId") ?? undefined,
+  })
+  if (!parsed.success) {
+    return NextResponse.json(
+      { errors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
   }
+  const { status, courseId } = parsed.data
 
-  const userRole = session.user.role
+  const where: Prisma.SubmissionWhereInput = {}
+  if (status) where.status = status
 
-  if (userRole === "STUDENT") {
+  const role = session.user.role
+  if (role === "STUDENT") {
     where.studentId = session.user.id
-  } else if (userRole === "TEACHER") {
+  } else if (role === "TEACHER") {
     where.lesson = {
       module: {
         course: {
@@ -33,13 +38,12 @@ export async function GET(request: Request) {
         },
       },
     }
-  } else if (courseId) {
-    // Admin with courseId filter
-    where.lesson = {
-      module: {
-        course: { id: courseId },
-      },
+  } else if (role === "ADMIN") {
+    if (courseId) {
+      where.lesson = { module: { course: { id: courseId } } }
     }
+  } else {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const submissions = await prisma.submission.findMany({
@@ -48,7 +52,10 @@ export async function GET(request: Request) {
       lesson: { select: { id: true, title: true, type: true } },
       student: { select: { id: true, name: true, email: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [
+      { submittedAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+    ],
   })
 
   return NextResponse.json(submissions)
@@ -97,7 +104,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not enrolled in this course" }, { status: 403 })
   }
 
-  // Upsert on [studentId, lessonId]
+  // Build type-aware data payload. Any stale grade is explicitly cleared
+  // on every (re)submit so the submission returns to a clean SUBMITTED cycle.
+  const data: Prisma.SubmissionUncheckedCreateInput = {
+    studentId: session.user.id,
+    lessonId: parsed.data.lessonId,
+    status: "SUBMITTED",
+    submittedAt: new Date(),
+    grade: null,
+    gradedAt: null,
+    feedback: null,
+    codeContent: null,
+    videoUrl: null,
+    quizAnswers: Prisma.JsonNull,
+    fileUrl: null,
+  }
+
+  if (lesson.type === "CODE") {
+    data.codeContent = parsed.data.codeContent ?? null
+  } else if (lesson.type === "VIDEO") {
+    data.videoUrl = parsed.data.videoUrl ?? null
+  } else if (lesson.type === "QUIZ") {
+    data.quizAnswers = (parsed.data.quizAnswers ?? Prisma.JsonNull) as Prisma.InputJsonValue
+  } else if (lesson.type === "TASK") {
+    // TASK lessons accept code and/or video and/or a file attachment
+    data.codeContent = parsed.data.codeContent ?? null
+    data.videoUrl = parsed.data.videoUrl ?? null
+    data.fileUrl = parsed.data.fileUrl ?? null
+  } else {
+    return NextResponse.json(
+      { error: "Lesson type does not accept submissions" },
+      { status: 400 }
+    )
+  }
+
   const submission = await prisma.submission.upsert({
     where: {
       studentId_lessonId: {
@@ -105,24 +145,8 @@ export async function POST(request: Request) {
         lessonId: parsed.data.lessonId,
       },
     },
-    update: {
-      codeContent: parsed.data.codeContent,
-      videoUrl: parsed.data.videoUrl,
-      quizAnswers: (parsed.data.quizAnswers ?? undefined) as Prisma.InputJsonValue | undefined,
-      fileUrl: parsed.data.fileUrl,
-      status: "SUBMITTED",
-      submittedAt: new Date(),
-    },
-    create: {
-      studentId: session.user.id,
-      lessonId: parsed.data.lessonId,
-      codeContent: parsed.data.codeContent,
-      videoUrl: parsed.data.videoUrl,
-      quizAnswers: (parsed.data.quizAnswers ?? undefined) as Prisma.InputJsonValue | undefined,
-      fileUrl: parsed.data.fileUrl,
-      status: "SUBMITTED",
-      submittedAt: new Date(),
-    },
+    create: data,
+    update: data,
   })
 
   return NextResponse.json(submission, { status: 201 })
