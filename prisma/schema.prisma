@@ -46,6 +46,12 @@ enum ModuleStatus {
   ARCHIVED
 }
 
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
 // ─── Auth.js v5 required models ───
 
 model Account {
@@ -236,7 +242,7 @@ model Announcement {
   id        String   @id @default(cuid())
   title     String
   content   String   @db.Text
-  priority  String   @default("normal")
+  priority  AnnouncementPriority @default(NORMAL)
   createdAt DateTime @default(now())
 
   authorId  String

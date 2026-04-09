@@ -3,13 +3,7 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
-
-const createAnnouncementSchema = z.object({
-  title: z.string().min(2).max(100),
-  content: z.string().min(1),
-  priority: z.enum(["low", "normal", "high"]).default("normal"),
-})
+import { createAnnouncementSchema } from "@/lib/validations"
 
 export async function createAnnouncement(formData: FormData) {
   const user = await requireRole(["TEACHER", "ADMIN"])
@@ -17,7 +11,7 @@ export async function createAnnouncement(formData: FormData) {
   const parsed = createAnnouncementSchema.safeParse({
     title: formData.get("title"),
     content: formData.get("content"),
-    priority: formData.get("priority") ?? "normal",
+    priority: formData.get("priority") ?? "NORMAL",
   })
 
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }

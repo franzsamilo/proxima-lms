@@ -120,6 +120,14 @@ export const usersQuerySchema = z.object({
   search: z.string().max(100).optional(),
 })
 
+// ─── Announcements ───
+
+export const createAnnouncementSchema = z.object({
+  title: z.string().min(2).max(120),
+  content: z.string().min(2).max(5000),
+  priority: z.enum(["LOW", "NORMAL", "HIGH"]).default("NORMAL"),
+})
+
 // ─── Settings ───
 
 export const updateProfileSchema = z.object({
