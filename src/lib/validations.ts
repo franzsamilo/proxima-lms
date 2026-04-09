@@ -106,9 +106,16 @@ export const createKitSchema = z.object({
 
 export const updateKitSchema = createKitSchema.partial()
 
+export const userRoleEnum = z.enum(["STUDENT", "TEACHER", "ADMIN"])
+
 export const updateUserSchema = z.object({
-  name: z.string().min(2).optional(),
-  role: z.enum(["STUDENT", "TEACHER", "ADMIN"]).optional(),
-  department: z.string().optional(),
+  name: z.string().min(2).max(100).optional(),
+  role: userRoleEnum.optional(),
+  department: z.string().max(100).nullable().optional(),
   schoolLevel: z.enum(["ELEMENTARY", "HS", "COLLEGE"]).nullable().optional(),
+})
+
+export const usersQuerySchema = z.object({
+  role: userRoleEnum.optional(),
+  search: z.string().max(100).optional(),
 })

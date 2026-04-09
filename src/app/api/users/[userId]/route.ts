@@ -32,6 +32,17 @@ export async function PATCH(
     return NextResponse.json({ error: "User not found" }, { status: 404 })
   }
 
+  if (
+    session.user.id === userId &&
+    parsed.data.role &&
+    parsed.data.role !== "ADMIN"
+  ) {
+    return NextResponse.json(
+      { error: "Admins cannot demote themselves" },
+      { status: 400 }
+    )
+  }
+
   const updated = await prisma.user.update({
     where: { id: userId },
     data: parsed.data,

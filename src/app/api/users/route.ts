@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { usersQuerySchema } from "@/lib/validations"
 
 export async function GET(request: Request) {
   const session = await auth()
@@ -13,9 +14,19 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const role = searchParams.get("role")
-  const search = searchParams.get("search")
+  const parsed = usersQuerySchema.safeParse({
+    role: searchParams.get("role") ?? undefined,
+    search: searchParams.get("search") ?? undefined,
+  })
 
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
+  }
+
+  const { role, search } = parsed.data
   const where: Record<string, unknown> = {}
 
   if (role) {
