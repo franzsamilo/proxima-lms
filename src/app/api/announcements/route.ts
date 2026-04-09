@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     data: {
       title,
       content,
-      priority: priority || "normal",
+      priority: priority?.toUpperCase() || "NORMAL",
       authorId: session.user.id,
     },
   })

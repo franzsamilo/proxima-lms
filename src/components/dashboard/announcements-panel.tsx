@@ -52,8 +52,8 @@ export function AnnouncementsPanel({ announcements }: AnnouncementsPanelProps) {
                 {item.content}
               </p>
               <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant={item.priority === "high" ? "danger" : "neutral"}>
-                  {item.priority}
+                <Badge variant={item.priority === "HIGH" ? "danger" : "neutral"}>
+                  {item.priority.toLowerCase()}
                 </Badge>
                 <span className="text-[12px] text-ink-tertiary">
                   {relativeTime(item.createdAt)}

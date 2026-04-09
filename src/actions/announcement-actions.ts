@@ -8,7 +8,7 @@ import { z } from "zod"
 const createAnnouncementSchema = z.object({
   title: z.string().min(2).max(100),
   content: z.string().min(1),
-  priority: z.enum(["low", "normal", "high"]).default("normal"),
+  priority: z.enum(["LOW", "NORMAL", "HIGH"]).default("NORMAL"),
 })
 
 export async function createAnnouncement(formData: FormData) {
@@ -17,7 +17,7 @@ export async function createAnnouncement(formData: FormData) {
   const parsed = createAnnouncementSchema.safeParse({
     title: formData.get("title"),
     content: formData.get("content"),
-    priority: formData.get("priority") ?? "normal",
+    priority: (formData.get("priority") as string)?.toUpperCase() ?? "NORMAL",
   })
 
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }

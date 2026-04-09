@@ -1,4 +1,4 @@
-import { PrismaClient, Role, SchoolLevel, Tier, LessonType, ModuleStatus, SubmissionStatus } from "@prisma/client"
+import { PrismaClient, Role, SchoolLevel, Tier, LessonType, ModuleStatus, SubmissionStatus, AnnouncementPriority } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
@@ -221,9 +221,9 @@ async function main() {
 
   // ─── Announcements ───
   await prisma.announcement.createMany({ data: [
-    { title: "Robotics Fair Registration Open", content: "Sign up for the annual robotics fair by April 15th. Showcase your semester projects! Teams of up to 3. Prizes for Best in Show, Most Innovative, and People's Choice.", priority: "high", authorId: teacher.id },
-    { title: "Lab Hours Extended", content: "The robotics lab (Room 204) will be open until 9 PM on weekdays starting next week. Weekend hours: 10 AM - 5 PM. Sign the log sheet when entering.", priority: "normal", authorId: admin.id },
-    { title: "New Sensor Kits Available", content: "We've received 15 new ultrasonic sensor kits and 10 infrared sensor arrays. See the lab technician (Ms. Rodriguez, Room 206) to check one out.", priority: "normal", authorId: teacher.id },
+    { title: "Robotics Fair Registration Open", content: "Sign up for the annual robotics fair by April 15th. Showcase your semester projects! Teams of up to 3. Prizes for Best in Show, Most Innovative, and People's Choice.", priority: AnnouncementPriority.HIGH, authorId: teacher.id },
+    { title: "Lab Hours Extended", content: "The robotics lab (Room 204) will be open until 9 PM on weekdays starting next week. Weekend hours: 10 AM - 5 PM. Sign the log sheet when entering.", priority: AnnouncementPriority.NORMAL, authorId: admin.id },
+    { title: "New Sensor Kits Available", content: "We've received 15 new ultrasonic sensor kits and 10 infrared sensor arrays. See the lab technician (Ms. Rodriguez, Room 206) to check one out.", priority: AnnouncementPriority.NORMAL, authorId: teacher.id },
   ] })
 
   // ─── Calendar Events ───

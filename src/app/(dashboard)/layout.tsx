@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ...announcements.map((a) => ({
       id: a.id,
       title: a.title,
-      subtitle: a.priority === "high" ? "High priority" : "Announcement",
+      subtitle: a.priority === "HIGH" ? "High priority" : "Announcement",
       time: a.createdAt.toISOString(),
       type: "announcement" as const,
     })),
