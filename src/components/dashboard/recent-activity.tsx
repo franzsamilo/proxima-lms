@@ -1,4 +1,6 @@
-import { Card, CardHeader } from "@/components/ui/card"
+import { Panel, PanelHeader } from "@/components/ui/panel"
+import { ProtocolBadge } from "@/components/ui/protocol-badge"
+import { CheckCircle2, Clock, FileCode2, Video, BookOpen, ListChecks } from "lucide-react"
 
 interface SubmissionItem {
   id: string
@@ -24,81 +26,85 @@ function relativeTime(date: Date | string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   const diffDays = Math.floor(diffHours / 24)
   if (diffDays < 30) return `${diffDays}d ago`
-  const diffMonths = Math.floor(diffDays / 30)
-  return `${diffMonths}mo ago`
+  return `${Math.floor(diffDays / 30)}mo ago`
 }
 
-function CheckSquareIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-success shrink-0"
-    >
-      <polyline points="9 11 12 14 22 4" />
-      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-    </svg>
-  )
-}
-
-function ClockIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-warning shrink-0"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  )
+const typeIcons: Record<string, typeof FileCode2> = {
+  CODE: FileCode2,
+  VIDEO: Video,
+  SLIDES: BookOpen,
+  QUIZ: ListChecks,
+  TASK: FileCode2,
+  DOCUMENT: BookOpen,
 }
 
 export function RecentActivity({ submissions }: RecentActivityProps) {
   return (
-    <Card>
-      <CardHeader>Recent Activity</CardHeader>
+    <Panel variant="default" padding="none" className="overflow-hidden">
+      <PanelHeader
+        title="Recent Activity"
+        divider
+        className="px-5 pt-5"
+      />
       {submissions.length === 0 ? (
-        <p className="text-[13px] text-ink-tertiary">No recent activity.</p>
+        <div className="px-5 pb-5 flex items-center gap-3 text-ink-tertiary">
+          <Clock size={14} />
+          <span className="font-[family-name:var(--font-family-body)] text-[13px]">No recent activity.</span>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <ul className="relative">
+          {/* Vertical timeline rail */}
+          <div className="absolute left-[42px] top-2 bottom-2 w-px bg-gradient-to-b from-edge via-edge to-transparent" />
           {submissions.map((sub) => {
             const isGraded = sub.status === "GRADED"
             const timestamp = isGraded ? sub.gradedAt : sub.submittedAt
-            const description = isGraded
-              ? `Graded: ${sub.lesson.title} \u2014 ${sub.grade ?? 0}/100`
-              : `Submitted: ${sub.lesson.title}`
+            const TypeIcon = typeIcons[sub.lesson.type] ?? FileCode2
 
             return (
-              <div key={sub.id} className="flex items-start gap-3">
-                {isGraded ? <CheckSquareIcon /> : <ClockIcon />}
-                <div className="min-w-0 flex-1">
-                  <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-primary truncate">
-                    {description}
-                  </p>
-                  {timestamp && (
-                    <p className="text-[12px] text-ink-tertiary mt-0.5">
-                      {relativeTime(timestamp)}
-                    </p>
-                  )}
+              <li key={sub.id} className="relative px-5 py-3 flex items-start gap-4 hover:bg-surface-3/30 transition-colors">
+                {/* Timeline dot */}
+                <div
+                  className={`relative z-10 mt-1 w-6 h-6 rounded border flex items-center justify-center shrink-0 ${
+                    isGraded
+                      ? "bg-success-tint border-success/40 text-success"
+                      : "bg-warning-tint border-warning/40 text-warning"
+                  }`}
+                >
+                  {isGraded ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                 </div>
-              </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-primary truncate">
+                        <span className="text-ink-tertiary mr-1.5">
+                          {isGraded ? "Graded:" : "Submitted:"}
+                        </span>
+                        {sub.lesson.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center gap-1.5 font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary">
+                          <TypeIcon size={10} />
+                          {sub.lesson.type.charAt(0) + sub.lesson.type.slice(1).toLowerCase()}
+                        </span>
+                        {timestamp && (
+                          <span className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary">
+                            {relativeTime(timestamp)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {isGraded && sub.grade != null && (
+                      <ProtocolBadge tone={sub.grade >= 90 ? "success" : sub.grade >= 70 ? "info" : "warning"}>
+                        {sub.grade}/100
+                      </ProtocolBadge>
+                    )}
+                  </div>
+                </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
-    </Card>
+    </Panel>
   )
 }

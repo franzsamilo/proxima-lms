@@ -1,31 +1,31 @@
 import type { Metadata } from "next"
-import { Syne, Outfit, JetBrains_Mono } from "next/font/google"
+import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 
-const syne = Syne({
+const display = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 })
 
-const outfit = Outfit({
+const body = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-body",
   display: "swap",
 })
 
-const jetbrainsMono = JetBrains_Mono({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-mono",
   display: "swap",
 })
 
 export const metadata: Metadata = {
-  title: "Proxima LMS",
-  description: "Robotics & Technical Education Learning Management System",
+  title: "Proxima — Robotics Mission Deck",
+  description: "Mission control for robotics and technical education. Hardware kits, code submissions, and video demos in one deck.",
   icons: {
     icon: "/logo.svg",
     apple: "/logo.svg",
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${outfit.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

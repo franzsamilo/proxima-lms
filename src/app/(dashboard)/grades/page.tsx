@@ -148,33 +148,43 @@ export default async function GradesPage() {
 
   const pageTitle =
     role === "STUDENT"
-      ? "My Grades"
+      ? "My grades"
       : role === "TEACHER"
-        ? "Class Grades"
-        : "All Grades"
+        ? "Class grades"
+        : "All grades"
 
   const tableTitle =
     role === "STUDENT"
-      ? "All Grades"
+      ? "Grade history"
       : role === "TEACHER"
-        ? "Student Submissions"
-        : "All Submissions"
+        ? "Student submissions"
+        : "All submissions"
+
+  const totalGraded = gradeRows.length
+  const overallAvg = totalGraded > 0
+    ? Math.round(gradeRows.reduce((a, r) => a + r.grade, 0) / totalGraded)
+    : null
 
   return (
     <div className="space-y-6">
-      <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary">
-        {pageTitle}
-      </h1>
+      <div className="flex flex-col gap-2">
+        <h1 className="font-[family-name:var(--font-family-display)] text-[28px] md:text-[36px] font-bold tracking-tight text-ink-primary leading-[1.05]">
+          {pageTitle}
+        </h1>
+        <p className="font-[family-name:var(--font-family-body)] text-[14px] text-ink-tertiary">
+          {totalGraded} graded · Average {overallAvg ?? "—"}/100
+        </p>
+      </div>
 
-      {/* Course summary cards */}
-      <section>
-        <h2 className="font-[family-name:var(--font-family-mono)] text-[11px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-4">
-          By Course
+      {/* Course summary */}
+      <section className="space-y-3">
+        <h2 className="font-[family-name:var(--font-family-display)] text-[16px] font-semibold text-ink-primary">
+          By course
         </h2>
         <GradeSummaryCards summaries={summaries} />
       </section>
 
-      {/* Grades table + distribution chart */}
+      {/* Table + distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2">
           <Card className="p-0 overflow-hidden">
@@ -186,7 +196,7 @@ export default async function GradesPage() {
         </div>
 
         <Card>
-          <CardHeader>Grade Distribution</CardHeader>
+          <CardHeader>Grade distribution</CardHeader>
           <GradeDistributionChart distribution={distribution} />
         </Card>
       </div>

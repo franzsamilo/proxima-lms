@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { updateLesson } from "@/actions/lesson-actions"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2 } from "lucide-react"
+import { DocumentUpload, type DocumentMeta } from "@/components/lessons/document-upload"
 
 interface Lesson {
   id: string
@@ -17,6 +18,10 @@ interface Lesson {
   durationMins: number
   content: any
   codeSkeleton: string | null
+  fileUrl?: string | null
+  fileName?: string | null
+  fileMime?: string | null
+  fileSize?: number | null
 }
 
 interface EditLessonModalProps {
@@ -30,6 +35,7 @@ export function EditLessonModal({ open, onClose, lesson }: EditLessonModalProps)
   const [durationMins, setDurationMins] = React.useState(30)
   const [content, setContent] = React.useState<any>(null)
   const [codeSkeleton, setCodeSkeleton] = React.useState("")
+  const [doc, setDoc] = React.useState<DocumentMeta | null>(null)
   const [isPending, setIsPending] = React.useState(false)
   const { showToast, toastProps } = useToast()
   const router = useRouter()
@@ -40,6 +46,16 @@ export function EditLessonModal({ open, onClose, lesson }: EditLessonModalProps)
       setDurationMins(lesson.durationMins)
       setContent(lesson.content ?? getDefaultContent(lesson.type))
       setCodeSkeleton(lesson.codeSkeleton ?? "")
+      setDoc(
+        lesson.fileUrl && lesson.fileName
+          ? {
+              url: lesson.fileUrl,
+              name: lesson.fileName,
+              size: lesson.fileSize ?? 0,
+              mime: lesson.fileMime ?? "application/octet-stream",
+            }
+          : null
+      )
     }
   }, [lesson])
 
@@ -50,6 +66,7 @@ export function EditLessonModal({ open, onClose, lesson }: EditLessonModalProps)
       case "QUIZ": return { questions: [] }
       case "TASK": return { brief: "", requirements: [], rubric: {} }
       case "VIDEO": return { videoUrl: "" }
+      case "DOCUMENT": return { description: "" }
       default: return {}
     }
   }
@@ -64,6 +81,12 @@ export function EditLessonModal({ open, onClose, lesson }: EditLessonModalProps)
     formData.set("content", JSON.stringify(content))
     if (lesson.type === "CODE") {
       formData.set("codeSkeleton", codeSkeleton)
+    }
+    if (lesson.type === "DOCUMENT" || lesson.type === "SLIDES") {
+      formData.set("fileUrl", doc?.url ?? "")
+      formData.set("fileName", doc?.name ?? "")
+      formData.set("fileMime", doc?.mime ?? "")
+      formData.set("fileSize", doc ? String(doc.size) : "")
     }
 
     const result = await updateLesson(lesson.id, formData)
@@ -114,7 +137,15 @@ export function EditLessonModal({ open, onClose, lesson }: EditLessonModalProps)
 
           {/* Type-specific editors */}
           {lesson.type === "SLIDES" && (
-            <SlidesEditor slides={content?.slides ?? []} onChange={(slides) => setContent({ ...content, slides })} />
+            <>
+              <SlidesEditor slides={content?.slides ?? []} onChange={(slides) => setContent({ ...content, slides })} />
+              <div>
+                <label className="block font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-1.5">
+                  Optional Attachment
+                </label>
+                <DocumentUpload value={doc} onChange={setDoc} />
+              </div>
+            </>
           )}
           {lesson.type === "CODE" && (
             <CodeLessonEditor
@@ -142,10 +173,54 @@ export function EditLessonModal({ open, onClose, lesson }: EditLessonModalProps)
           {lesson.type === "VIDEO" && (
             <VideoEditor videoUrl={content?.videoUrl ?? ""} onChange={(videoUrl) => setContent({ ...content, videoUrl })} />
           )}
+          {lesson.type === "DOCUMENT" && (
+            <DocumentLessonEditor
+              description={content?.description ?? ""}
+              doc={doc}
+              onDescriptionChange={(description) => setContent({ ...content, description })}
+              onDocChange={setDoc}
+            />
+          )}
         </div>
       </Modal>
       <Toast {...toastProps} />
     </>
+  )
+}
+
+/* ── DOCUMENT LESSON EDITOR ── */
+
+function DocumentLessonEditor({
+  description,
+  doc,
+  onDescriptionChange,
+  onDocChange,
+}: {
+  description: string
+  doc: DocumentMeta | null
+  onDescriptionChange: (v: string) => void
+  onDocChange: (d: DocumentMeta | null) => void
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-1.5">
+          File
+        </label>
+        <DocumentUpload value={doc} onChange={onDocChange} />
+      </div>
+      <div>
+        <label className="block font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[1.5px] text-ink-ghost mb-1.5">
+          Description
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder="What this document covers, why it matters, what to focus on…"
+          className="w-full min-h-[80px] bg-surface-3 border border-edge rounded-[var(--radius-md)] px-3 py-2 font-[family-name:var(--font-family-body)] text-[13px] text-ink-primary placeholder:text-ink-ghost resize-y focus:border-edge-strong focus:ring-[3px] focus:ring-signal-muted focus:outline-none"
+        />
+      </div>
+    </div>
   )
 }
 

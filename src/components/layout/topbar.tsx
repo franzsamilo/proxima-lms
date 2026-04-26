@@ -1,8 +1,18 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { Menu, Search, Bell, X, ArrowLeft, Megaphone, CalendarDays } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
+import {
+  Menu,
+  Search,
+  Bell,
+  X,
+  ArrowLeft,
+  Megaphone,
+  CalendarDays,
+} from "lucide-react"
 import { Avatar } from "@/components/ui/avatar"
+import { GlobalSearch } from "@/components/layout/global-search"
 import type { NotificationItem } from "@/app/(dashboard)/dashboard-shell"
 
 interface TopbarProps {
@@ -20,12 +30,11 @@ function formatRelativeTime(dateStr: string) {
   const now = new Date()
   const diffMs = date.getTime() - now.getTime()
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
-
   if (diffDays < 0) {
-    const absDays = Math.abs(diffDays)
-    if (absDays === 0) return "Today"
-    if (absDays === 1) return "Yesterday"
-    if (absDays < 7) return `${absDays}d ago`
+    const abs = Math.abs(diffDays)
+    if (abs === 0) return "Today"
+    if (abs === 1) return "Yesterday"
+    if (abs < 7) return `${abs}d ago`
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
   }
   if (diffDays === 0) return "Today"
@@ -34,19 +43,27 @@ function formatRelativeTime(dateStr: string) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function Topbar({ user, notifications = [], onMenuClick, pageTitle }: TopbarProps) {
+function useNow() {
+  const [now, setNow] = useState<Date | null>(null)
+  useEffect(() => {
+    setNow(new Date())
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
+export function Topbar({
+  user,
+  notifications = [],
+  onMenuClick,
+  pageTitle,
+}: TopbarProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const now = useNow()
 
-  useEffect(() => {
-    if (mobileSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus()
-    }
-  }, [mobileSearchOpen])
-
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -59,144 +76,150 @@ export function Topbar({ user, notifications = [], onMenuClick, pageTitle }: Top
     }
   }, [notifOpen])
 
-  // Mobile search expanded state
+  const dateLabel = now
+    ? now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    : "—"
+
   if (mobileSearchOpen) {
     return (
-      <header className="flex items-center gap-2 h-[60px] px-4 bg-surface-1 border-b border-edge shrink-0 lg:hidden animate-[fadeIn_0.15s_ease]">
+      <header className="flex items-center gap-2 h-14 px-4 bg-surface-1 border-b border-edge shrink-0 lg:hidden animate-[fadeIn_0.15s_ease]">
         <button
           onClick={() => setMobileSearchOpen(false)}
-          className="p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded transition-colors"
           aria-label="Close search"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
-        <div className="flex-1 flex items-center gap-2 h-10 px-3 bg-surface-2 border border-edge-strong rounded-[var(--radius-md)] shadow-[0_0_0_2px_var(--color-signal-glow)]">
-          <Search size={16} className="text-ink-ghost shrink-0" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search..."
-            className="flex-1 bg-transparent font-[family-name:var(--font-family-body)] text-[13px] text-ink-primary placeholder:text-ink-ghost outline-none"
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setMobileSearchOpen(false)
-            }}
-          />
-          <button
-            onClick={() => setMobileSearchOpen(false)}
-            className="p-1 text-ink-ghost hover:text-ink-secondary transition-colors"
-            aria-label="Clear search"
-          >
-            <X size={14} />
-          </button>
-        </div>
+        <GlobalSearch variant="mobile" onClose={() => setMobileSearchOpen(false)} />
       </header>
     )
   }
 
   return (
-    <header className="flex items-center justify-between h-[60px] px-4 lg:px-6 bg-surface-1 border-b border-edge shrink-0">
-      {/* Left: mobile hamburger + page title */}
-      <div className="flex items-center gap-2 min-w-0">
+    <header className="relative flex items-center justify-between h-14 px-4 lg:px-6 bg-surface-1 border-b border-edge shrink-0">
+      <span className="pointer-events-none absolute inset-x-0 bottom-[-1px] h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent" />
+
+      {/* Left */}
+      <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="lg:hidden p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded transition-colors"
           aria-label="Open menu"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
-        {pageTitle && (
-          <h1 className="font-[family-name:var(--font-family-display)] text-[15px] font-bold tracking-[1px] text-ink-primary truncate">
-            {pageTitle}
-          </h1>
-        )}
+        <div className="flex items-center gap-3 min-w-0">
+          {pageTitle && (
+            <h1 className="font-[family-name:var(--font-family-display)] text-[15px] font-semibold tracking-tight text-ink-primary truncate">
+              {pageTitle}
+            </h1>
+          )}
+        </div>
       </div>
 
-      {/* Right side */}
+      {/* Right */}
       <div className="flex items-center gap-2 md:gap-3 ml-auto">
-        {/* Mobile search button */}
+        {/* Date pill */}
+        <div className="hidden md:flex items-center h-8 px-3 bg-surface-2/60 border border-edge rounded-[4px] font-[family-name:var(--font-family-body)] text-[12px] text-ink-secondary tabular">
+          {dateLabel}
+        </div>
+
+        {/* Mobile search trigger */}
         <button
           onClick={() => setMobileSearchOpen(true)}
-          className="lg:hidden p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="lg:hidden p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded transition-colors"
           aria-label="Search"
         >
           <Search size={18} />
         </button>
 
-        {/* Desktop search bar */}
-        <div className="hidden lg:flex items-center gap-2 w-60 h-9 px-3 bg-surface-2 border border-edge rounded-[var(--radius-md)] focus-within:border-edge-strong focus-within:shadow-[0_0_0_2px_var(--color-signal-glow)] transition-all">
-          <Search size={16} className="text-ink-ghost shrink-0" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="flex-1 bg-transparent font-[family-name:var(--font-family-body)] text-[13px] text-ink-primary placeholder:text-ink-ghost outline-none"
-          />
-        </div>
+        {/* Desktop search */}
+        <GlobalSearch variant="desktop" />
 
-        {/* Notification bell + dropdown */}
+        {/* Notifications */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            className="relative p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded-[var(--radius-md)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="relative p-2 text-ink-secondary hover:text-ink-primary hover:bg-surface-3 rounded transition-colors"
             aria-label="Notifications"
           >
-            <Bell size={18} />
+            <Bell size={16} />
             {notifications.length > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-[7px] h-[7px] bg-danger rounded-full" />
+              <span className="absolute top-1 right-1">
+                <span className="block w-2 h-2 bg-plasma rounded-full shadow-[0_0_8px_var(--color-plasma)]" />
+              </span>
             )}
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-surface-1 border border-edge rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-50 animate-[slideUp_0.15s_ease]">
-              <div className="px-4 py-3 border-b border-edge">
-                <h3 className="font-[family-name:var(--font-family-display)] text-[13px] font-bold text-ink-primary">
+            <div className="absolute right-0 top-full mt-2 w-[360px] max-h-[420px] overflow-y-auto bg-surface-1 border border-edge rounded-[6px] shadow-[var(--shadow-elevated)] z-50 animate-[slideUp_0.15s_ease] bracket-frame-4">
+              <span className="bracket tl" />
+              <span className="bracket tr" />
+              <span className="bracket bl" />
+              <span className="bracket br" />
+              <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
+                <h3 className="font-[family-name:var(--font-family-display)] text-[14px] font-semibold text-ink-primary">
                   Notifications
                 </h3>
+                <span className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary tabular">
+                  {notifications.length} {notifications.length === 1 ? "item" : "items"}
+                </span>
               </div>
               {notifications.length === 0 ? (
-                <div className="px-4 py-8 text-center">
+                <div className="px-4 py-12 text-center">
                   <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-tertiary">
-                    No new notifications
+                    You&rsquo;re all caught up.
                   </p>
                 </div>
               ) : (
-                <div>
-                  {notifications.map((notif, i) => (
-                    <div
-                      key={notif.id}
-                      className={`flex items-start gap-3 px-4 py-3 hover:bg-surface-3 transition-colors ${
-                        i < notifications.length - 1 ? "border-b border-edge" : ""
-                      }`}
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {notif.type === "announcement" ? (
-                          <Megaphone size={14} className="text-warning" />
-                        ) : (
-                          <CalendarDays size={14} className="text-info" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-[family-name:var(--font-family-body)] text-[13px] font-medium text-ink-primary truncate">
-                          {notif.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary">
-                            {notif.subtitle}
-                          </span>
-                          <span className="font-[family-name:var(--font-family-mono)] text-[10px] text-ink-ghost">
-                            {formatRelativeTime(notif.time)}
-                          </span>
+                <ul className="divide-y divide-edge">
+                  {notifications.map((notif) => (
+                    <li key={notif.id}>
+                      <Link
+                        href={notif.href}
+                        onClick={() => setNotifOpen(false)}
+                        className="flex items-start gap-3 px-4 py-3 hover:bg-surface-2 transition-colors"
+                      >
+                        <span className="mt-1 shrink-0">
+                          {notif.type === "announcement" ? (
+                            <Megaphone size={12} className="text-warning" />
+                          ) : (
+                            <CalendarDays size={12} className="text-info" />
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-[family-name:var(--font-family-body)] text-[13px] font-medium text-ink-primary truncate">
+                            {notif.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary">
+                              {notif.subtitle}
+                            </span>
+                            <span className="font-[family-name:var(--font-family-body)] text-[11px] text-signal/80 tabular">
+                              {formatRelativeTime(notif.time)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </Link>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
+              <div className="px-4 py-2 border-t border-edge flex items-center justify-between">
+                <Link
+                  href="/calendar"
+                  onClick={() => setNotifOpen(false)}
+                  className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary hover:text-signal transition-colors"
+                >
+                  View all in calendar →
+                </Link>
+              </div>
             </div>
           )}
         </div>
 
-        {/* User avatar */}
-        <Avatar name={user.name} size={32} className="cursor-pointer" />
+        <span className="hidden lg:inline-block w-px h-6 bg-edge" />
+        <Avatar name={user.name} size={30} className="cursor-pointer ring-1 ring-edge hover:ring-signal/50 transition-all" />
       </div>
     </header>
   )

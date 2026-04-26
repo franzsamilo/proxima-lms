@@ -2,8 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Avatar } from "@/components/ui/avatar"
+import { MissionLogo } from "@/components/ui/mission-logo"
+import { StatusDot } from "@/components/ui/status-dot"
 import {
   LayoutDashboard,
   BookOpen,
@@ -15,7 +18,10 @@ import {
   Users,
   Settings,
   X,
+  LogOut,
+  ChevronRight,
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 
 interface SidebarProps {
   user: {
@@ -29,125 +35,170 @@ interface SidebarProps {
   onMobileClose: () => void
 }
 
-const navGroups = [
+interface NavItem {
+  name: string
+  code: string
+  href: string
+  icon: typeof LayoutDashboard
+  roles: string[] | null
+}
+
+interface NavGroup {
+  label: string
+  channel: string
+  items: NavItem[]
+}
+
+const navGroups: NavGroup[] = [
   {
-    label: "MAIN",
+    label: "Learn",
+    channel: "",
     items: [
-      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: null },
-      { name: "Courses", href: "/courses", icon: BookOpen, roles: null },
-      { name: "Tasks", href: "/tasks", icon: CheckSquare, roles: null },
-      { name: "Grades", href: "/grades", icon: BarChart3, roles: null },
-      { name: "Calendar", href: "/calendar", icon: CalendarDays, roles: null },
+      { name: "Dashboard", code: "", href: "/dashboard", icon: LayoutDashboard, roles: null },
+      { name: "Courses", code: "", href: "/courses", icon: BookOpen, roles: null },
+      { name: "Tasks", code: "", href: "/tasks", icon: CheckSquare, roles: null },
+      { name: "Grades", code: "", href: "/grades", icon: BarChart3, roles: null },
+      { name: "Calendar", code: "", href: "/calendar", icon: CalendarDays, roles: null },
     ],
   },
   {
-    label: "RESOURCES",
+    label: "Resources",
+    channel: "",
     items: [
-      { name: "Lesson Packages", href: "/packages", icon: Package, roles: null },
-      { name: "Hardware Kits", href: "/hardware", icon: Wrench, roles: ["TEACHER", "ADMIN"] as string[] },
+      { name: "Lesson Packages", code: "", href: "/packages", icon: Package, roles: null },
+      { name: "Hardware Kits", code: "", href: "/hardware", icon: Wrench, roles: ["TEACHER", "ADMIN"] },
     ],
   },
   {
-    label: "SYSTEM",
+    label: "System",
+    channel: "",
     items: [
-      { name: "Users", href: "/users", icon: Users, roles: ["ADMIN"] as string[] },
-      { name: "Settings", href: "/settings", icon: Settings, roles: null },
+      { name: "Users", code: "", href: "/users", icon: Users, roles: ["ADMIN"] },
+      { name: "Settings", code: "", href: "/settings", icon: Settings, roles: null },
     ],
   },
 ]
 
+function useClock() {
+  const [time, setTime] = useState<string>("--:--:--")
+  useEffect(() => {
+    const tick = () => {
+      const d = new Date()
+      const h = String(d.getUTCHours()).padStart(2, "0")
+      const m = String(d.getUTCMinutes()).padStart(2, "0")
+      const s = String(d.getUTCSeconds()).padStart(2, "0")
+      setTime(`${h}:${m}:${s}`)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
+  return time
+}
+
 export function Sidebar({ user, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
+  const time = useClock()
 
   const sidebarContent = (
-    <div className="flex flex-col h-full w-64 bg-surface-1 shadow-[1px_0_0_var(--color-edge)]">
-      {/* Logo block */}
-      <div className="flex items-center gap-3 h-[72px] px-5 shrink-0">
-        <div
-          className="flex items-center justify-center w-9 h-9 rounded-[var(--radius-md)] text-white shrink-0"
-          style={{
-            background: "linear-gradient(135deg, var(--color-signal), #0EA5A0)",
-          }}
-        >
-          <span className="font-[family-name:var(--font-family-display)] text-[16px] font-[800] leading-none">
-            P
-          </span>
-        </div>
-        <div className="flex flex-col">
-          <span
-            className="font-[family-name:var(--font-family-display)] text-[14px] font-[800] tracking-[4px] bg-gradient-to-r from-signal to-[#0EA5A0] bg-clip-text text-transparent leading-tight"
-          >
-            PROXIMA
-          </span>
-          <span className="font-[family-name:var(--font-family-mono)] text-[9px] tracking-[3px] text-ink-ghost leading-tight">
-            ROBOTICS LMS
-          </span>
-        </div>
+    <div className="flex flex-col h-full w-[260px] bg-surface-1 border-r border-edge relative overflow-hidden">
+      {/* Background grid */}
+      <div className="pointer-events-none absolute inset-0 bg-grid-fine opacity-30" />
 
-        {/* Mobile close button */}
-        <button
-          onClick={onMobileClose}
-          className="ml-auto lg:hidden p-1 text-ink-secondary hover:text-ink-primary transition-colors"
-          aria-label="Close sidebar"
-        >
-          <X size={18} />
-        </button>
+      {/* Logo */}
+      <div className="relative shrink-0 px-5 py-5 border-b border-edge">
+        <div className="flex items-center justify-between">
+          <MissionLogo size="md" />
+          <button
+            onClick={onMobileClose}
+            className="lg:hidden p-1 text-ink-secondary hover:text-ink-primary"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center justify-between font-[family-name:var(--font-family-mono)] text-[10px] tracking-wide">
+          <span className="inline-flex items-center gap-1.5 text-signal">
+            <StatusDot status="live" />
+            Online
+          </span>
+          <span className="text-ink-ghost tabular">{time} UTC</span>
+        </div>
       </div>
 
-      {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+      {/* Nav */}
+      <nav className="relative flex-1 overflow-y-auto px-3 py-4">
         {navGroups.map((group) => {
-          const visibleItems = group.items.filter(
+          const visible = group.items.filter(
             (item) => item.roles === null || item.roles.includes(user.role.toUpperCase())
           )
-          if (visibleItems.length === 0) return null
+          if (visible.length === 0) return null
 
           return (
-            <div key={group.label} className="mt-5">
-              <span className="block px-3 mb-2 font-[family-name:var(--font-family-mono)] text-[10px] font-medium uppercase tracking-[2px] text-ink-ghost">
-                {group.label}
-              </span>
-              <div className="flex flex-col gap-0.5">
-                {visibleItems.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            <div key={group.label} className="mb-5 last:mb-0">
+              <div className="flex items-center justify-between px-2 mb-2">
+                <span className="font-[family-name:var(--font-family-body)] text-[11px] font-semibold tracking-wide text-ink-ghost uppercase">
+                  {group.label}
+                </span>
+              </div>
+              <ul className="flex flex-col gap-0.5">
+                {visible.map((item) => {
+                  const isActive =
+                    pathname === item.href || pathname.startsWith(item.href + "/")
                   const Icon = item.icon
-
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onMobileClose}
-                      className={cn(
-                        "relative flex items-center gap-3 h-10 px-3 rounded-[var(--radius-md)] font-[family-name:var(--font-family-body)] text-[13px] font-medium transition-colors duration-200",
-                        isActive
-                          ? "bg-signal-muted text-signal"
-                          : "text-ink-secondary hover:bg-surface-3 hover:text-ink-primary"
-                      )}
-                    >
-                      {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[60%] bg-signal rounded-r-full" />
-                      )}
-                      <Icon size={18} className="shrink-0" />
-                      <span>{item.name}</span>
-                    </Link>
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={onMobileClose}
+                        className={cn(
+                          "group relative flex items-center gap-3 h-10 pl-3 pr-2 rounded-[6px] font-[family-name:var(--font-family-body)] text-[13px] transition-colors duration-150",
+                          isActive
+                            ? "bg-signal-muted text-signal"
+                            : "text-ink-secondary hover:text-ink-primary hover:bg-surface-2/60"
+                        )}
+                      >
+                        {isActive && (
+                          <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[2px] h-5 tick-vert rounded-r" />
+                        )}
+                        <Icon size={16} className={cn("shrink-0", isActive && "drop-shadow-[0_0_6px_var(--color-signal)]")} />
+                        <span className="flex-1 font-medium">{item.name}</span>
+                        {isActive && (
+                          <ChevronRight size={12} className="text-signal" />
+                        )}
+                      </Link>
+                    </li>
                   )
                 })}
-              </div>
+              </ul>
             </div>
           )
         })}
       </nav>
 
-      {/* User block */}
-      <div className="shrink-0 h-16 border-t border-edge flex items-center gap-3 px-4">
-        <Avatar name={user.name} size={36} />
-        <div className="flex flex-col min-w-0">
-          <span className="font-[family-name:var(--font-family-body)] text-[13px] font-semibold text-ink-primary truncate">
-            {user.name}
-          </span>
-          <span className="font-[family-name:var(--font-family-body)] text-[11px] text-ink-tertiary capitalize">
-            {user.role.toLowerCase()}
-          </span>
+      {/* Operator block */}
+      <div className="relative shrink-0 border-t border-edge p-3">
+        <div className="bracket-frame-4 relative flex items-center gap-3 rounded-[6px] bg-surface-2/60 p-2.5">
+          <span className="bracket tl" />
+          <span className="bracket tr" />
+          <span className="bracket bl" />
+          <span className="bracket br" />
+          <Avatar name={user.name} size={36} />
+          <div className="min-w-0 flex-1">
+            <div className="font-[family-name:var(--font-family-display)] text-[13px] font-semibold text-ink-primary truncate leading-tight">
+              {user.name}
+            </div>
+            <div className="font-[family-name:var(--font-family-body)] text-[11px] text-signal/80 mt-0.5 capitalize">
+              {user.role.toLowerCase()}
+            </div>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="p-1.5 text-ink-tertiary hover:text-danger hover:bg-danger/10 rounded transition-colors"
+            aria-label="Sign out"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </div>
     </div>
@@ -155,18 +206,10 @@ export function Sidebar({ user, mobileOpen, onMobileClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="hidden lg:block shrink-0">{sidebarContent}</aside>
-
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={onMobileClose}
-          />
-          {/* Slide-in sidebar */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onMobileClose} />
           <aside className="relative h-full animate-[slideInLeft_0.2s_ease-out]">
             {sidebarContent}
           </aside>

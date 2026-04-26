@@ -37,15 +37,23 @@ export function HardwareClient({ kits, students, isAdmin }: HardwareClientProps)
   const [showKitForm, setShowKitForm] = useState(false)
   const router = useRouter()
 
+  const totalDeployed = kits.reduce((s, k) => s + k.activeAssignments, 0)
+  const totalCapacity = kits.reduce((s, k) => s + k.totalQty, 0)
+
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary">
-          Hardware Kits
-        </h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="font-[family-name:var(--font-family-display)] text-[28px] md:text-[36px] font-bold tracking-tight text-ink-primary leading-[1.05]">
+            Hardware kits
+          </h1>
+          <p className="mt-2 font-[family-name:var(--font-family-body)] text-[14px] text-ink-tertiary">
+            {kits.length} {kits.length === 1 ? "kit" : "kits"} · {totalDeployed} of {totalCapacity} units assigned
+          </p>
+        </div>
         {isAdmin && (
           <Button onClick={() => setShowKitForm(true)}>
-            <Plus size={16} className="mr-1.5" /> New Kit
+            <Plus size={16} className="mr-1.5" /> New kit
           </Button>
         )}
       </div>

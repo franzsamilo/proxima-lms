@@ -71,11 +71,21 @@ export default async function TasksPage(props: {
 
   const isTeacherOrAdmin = user.role === "TEACHER" || user.role === "ADMIN"
 
+  const pendingCount = submissions.filter(s => s.status !== "GRADED").length
+  const gradedCount = submissions.filter(s => s.status === "GRADED").length
+
   return (
-    <div>
-      <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary mb-6">
-        Tasks
-      </h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="font-[family-name:var(--font-family-display)] text-[28px] md:text-[36px] font-bold tracking-tight text-ink-primary leading-[1.05]">
+          {isTeacherOrAdmin ? "Submissions" : "Tasks"}
+        </h1>
+        <p className="font-[family-name:var(--font-family-body)] text-[14px] text-ink-tertiary max-w-2xl">
+          {isTeacherOrAdmin
+            ? `Review, grade, and return student submissions. ${pendingCount} pending, ${gradedCount} graded.`
+            : `Track your work across all enrolled courses. ${pendingCount} pending, ${gradedCount} graded.`}
+        </p>
+      </div>
 
       <TasksClient
         submissions={submissions}

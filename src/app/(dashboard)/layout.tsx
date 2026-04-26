@@ -1,5 +1,4 @@
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { prisma } from "@/lib/prisma"
+import { getSessionUser, getRecentAnnouncements, getUpcomingEvents } from "@/lib/data"
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
 import { DashboardShell } from "./dashboard-shell"
@@ -26,29 +25,21 @@ function pathToTitle(pathname: string): string {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser()
+  // User + headers must block (we need them to gate render and pick page title).
+  // Notifications are non-critical; fetch in parallel but don't let them gate the shell.
+  const [user, headerStore, announcements, events] = await Promise.all([
+    getSessionUser(),
+    headers(),
+    getRecentAnnouncements(5).catch(() => []),
+    getUpcomingEvents(5).catch(() => []),
+  ])
   if (!user) redirect("/login")
 
-  const headerStore = await headers()
   const pathname =
     headerStore.get("x-pathname") ??
     headerStore.get("x-invoke-path") ??
     "/dashboard"
   const pageTitle = pathToTitle(pathname)
-
-  const [announcements, events] = await Promise.all([
-    prisma.announcement.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, title: true, priority: true, createdAt: true },
-    }),
-    prisma.calendarEvent.findMany({
-      where: { date: { gte: new Date() } },
-      orderBy: { date: "asc" },
-      take: 5,
-      select: { id: true, title: true, date: true, type: true },
-    }),
-  ])
 
   const notifications = [
     ...announcements.map((a) => ({
@@ -57,18 +48,33 @@ export default async function DashboardLayout({ children }: { children: React.Re
       subtitle: a.priority === "HIGH" ? "High priority" : "Announcement",
       time: a.createdAt.toISOString(),
       type: "announcement" as const,
+      href: `/dashboard#announcement-${a.id}`,
     })),
-    ...events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      subtitle: e.type.charAt(0).toUpperCase() + e.type.slice(1),
-      time: e.date.toISOString(),
-      type: "event" as const,
-    })),
-  ].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()).slice(0, 8)
+    ...events.map((e) => {
+      const monthYear = `${e.date.getFullYear()}-${String(e.date.getMonth() + 1).padStart(2, "0")}`
+      return {
+        id: e.id,
+        title: e.title,
+        subtitle: e.type.charAt(0).toUpperCase() + e.type.slice(1),
+        time: e.date.toISOString(),
+        type: "event" as const,
+        href: `/calendar?month=${monthYear}#event-${e.id}`,
+      }
+    }),
+  ]
+    .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+    .slice(0, 8)
+
+  const safeUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    image: user.image,
+  }
 
   return (
-    <DashboardShell user={JSON.parse(JSON.stringify(user))} notifications={notifications} pageTitle={pageTitle}>
+    <DashboardShell user={safeUser} notifications={notifications} pageTitle={pageTitle}>
       {children}
     </DashboardShell>
   )

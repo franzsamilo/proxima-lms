@@ -58,14 +58,18 @@ export default async function UsersPage(props: {
     _count: u._count,
   }))
 
+  const studentCount = userRows.filter(u => u.role === "STUDENT").length
+  const teacherCount = userRows.filter(u => u.role === "TEACHER").length
+  const adminCount = userRows.filter(u => u.role === "ADMIN").length
+
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="font-[family-name:var(--font-family-display)] text-[20px] md:text-[24px] font-bold tracking-tight text-ink-primary">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="font-[family-name:var(--font-family-display)] text-[28px] md:text-[36px] font-bold tracking-tight text-ink-primary leading-[1.05]">
           Users
         </h1>
-        <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-secondary mt-1">
-          {userRows.length} {userRows.length === 1 ? "user" : "users"} registered
+        <p className="font-[family-name:var(--font-family-body)] text-[14px] text-ink-tertiary">
+          {userRows.length} total · <span className="text-success">{studentCount} students</span> · <span className="text-info">{teacherCount} teachers</span> · <span className="text-purple">{adminCount} admins</span>
         </p>
       </div>
 

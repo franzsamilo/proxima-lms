@@ -1,351 +1,385 @@
-# Proxima LMS — Testing Guide
+# Proxima LMS — Tester Guide
 
-## Setup
+A practical walkthrough for QA. Each section is a short scenario with checkboxes — tick what works, leave a note next to anything that doesn't. Bug template at the bottom.
+
+---
+
+## 1. Setup
 
 ### Prerequisites
 - Node.js 18+
-- PostgreSQL database (Supabase or local)
+- A reachable PostgreSQL database (Supabase recommended)
+- `.env` file with `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` (≥32 chars), `UPLOADTHING_TOKEN`
 
-### Getting Running
+### First-time setup
 ```bash
-git clone <repo-url>
+git clone https://github.com/franzsamilo/proxima-lms.git
 cd proxima-lms
 npm install
-cp .env.example .env   # Fill in DATABASE_URL, AUTH_SECRET, AUTH_URL
-npx prisma migrate dev --name init
-npx prisma db seed
+cp .env.example .env     # then fill in real values
+npx prisma migrate deploy
+npx prisma db seed       # dev seed creates demo accounts + sample data
 npm run dev
-# Open http://localhost:3000
 ```
+Open http://localhost:3000.
 
-### Demo Accounts
+### Demo accounts (dev only)
 
-All accounts use password: **`password123`**
+Password for all: **`password123`**
 
-| Role | Email | Use For |
-|------|-------|---------|
-| **Teacher** | elena@proxima.edu | Course management, grading, hardware, calendar |
-| **Student** | marcus@student.proxima.edu | Enrolled in all 3 courses, has submissions |
-| **Student** | aisha@student.proxima.edu | Enrolled in 1 course (Python) |
-| **Student** | jake@student.proxima.edu | Enrolled in 1 course (Intro Robotics) |
-| **Admin** | admin@proxima.edu | User management, full access to everything |
+| Role     | Email                          | Notes                                      |
+|----------|--------------------------------|--------------------------------------------|
+| Teacher  | elena@proxima.edu              | Owns all 3 sample courses                  |
+| Student  | marcus@student.proxima.edu     | Enrolled in all 3, has graded submissions  |
+| Student  | aisha@student.proxima.edu      | Enrolled in Robot Programming (HS)         |
+| Student  | jake@student.proxima.edu       | Enrolled in Intro to Robotics (Elementary) |
+| Admin    | admin@proxima.edu              | Full access; *not* shown on login page     |
+
+> The admin account is no longer auto-listed on `/login` — that panel hides in production. Verify by setting `NODE_ENV=production` locally if needed.
 
 ---
 
-## Test Journeys
+## 2. Auth flows
 
-### Journey 1: Student Experience (Marcus)
+### 2.1 Sign in
+- [ ] `/login` shows the form with **Email** and **Password** labels (plain English, not "Operator ID")
+- [ ] Wrong credentials show "Wrong email or password"
+- [ ] Correct credentials redirect to `/dashboard` — no blank page, no redirect loop
+- [ ] Password field has show/hide eye icon
+- [ ] "Create an account" link goes to `/register`
+- [ ] In dev: a "DEMO ACCOUNTS · DEV ONLY" panel shows the two student/teacher demo accounts (no admin)
 
-Login as **marcus@student.proxima.edu**
+### 2.2 Sign up
+- [ ] `/register` shows: full name, email, password, confirm, role toggle (Student/Teacher), school level (Student only)
+- [ ] Submit with mismatched passwords → inline error
+- [ ] Submit with existing email → "Email already registered" inline
+- [ ] Successful submit auto-signs in and lands on `/dashboard`
+- [ ] **Cannot register as ADMIN** — only Student/Teacher options exist (intentional)
 
-#### 1.1 Dashboard
-- [ ] Dashboard loads with stats: Enrolled Courses, Pending Tasks, Average Grade, Progress
-- [ ] Announcements panel shows recent announcements
-- [ ] Recent Activity shows Marcus's submissions
-- [ ] Upcoming Events shows deadlines and events
+### 2.3 Sign out
+- [ ] In sidebar, lower-left, click the door icon next to your avatar
+- [ ] You're sent back to `/login`
+- [ ] Hitting browser back button does NOT show the cached dashboard
 
-#### 1.2 Notification Bell
-- [ ] Click the bell icon in the topbar
-- [ ] Dropdown shows announcements + upcoming events
-- [ ] Dropdown closes when clicking outside
-- [ ] Red dot appears when there are notifications
+### 2.4 Session expiry / self-healing (important — production safety)
+- [ ] Sign in successfully
+- [ ] In DevTools → Application → Cookies → modify the value of `authjs.session-token` to garbage and reload
+- [ ] You should be redirected to `/login?reason=session_expired` — NOT stuck in a loop
+- [ ] The login page shows: *"Your session expired. Please sign in again."*
+- [ ] Cookies are auto-cleared (verify in DevTools)
 
-#### 1.3 Courses
-- [ ] Navigate to Courses in sidebar
-- [ ] See 3 enrolled courses as cards (Intro Robotics, Advanced Kinematics, Robot Programming)
-- [ ] Each card shows: title, level badge, description, progress bar, module/lesson count
-- [ ] Click a course card to view detail
+### 2.5 Rate limiting
+- [ ] On `/login`, submit wrong credentials 9 times rapidly
+- [ ] After ~8 attempts you should see: *"Too many sign-in attempts. Try again in Ns."*
+- [ ] Wait the remaining time, retry — should be allowed
 
-#### 1.4 Course Detail
-- [ ] Course detail page loads with header info, badges, instructor name
-- [ ] Progress bar shows enrollment progress
-- [ ] Course Timeline shows start/end dates and module dots
-- [ ] Module Accordion expands/collapses
-- [ ] Lessons inside modules are clickable
+### 2.6 Route protection
+- [ ] Open an incognito window, hit `/dashboard` directly → redirects to `/login?from=/dashboard`
+- [ ] After signing in, you land on `/dashboard` (the original target)
+- [ ] As STUDENT: hitting `/users` or `/hardware` redirects to `/dashboard`
+- [ ] As TEACHER: `/users` redirects to `/dashboard`; `/hardware` works
+- [ ] As ADMIN: every route accessible
 
-#### 1.5 Lesson Viewer — All 5 Types
-Test each lesson type by navigating through "Introduction to Robotics" course:
+---
 
-**SLIDES** (Parts of a Robot):
-- [ ] Slides render with markdown formatting
-- [ ] Previous/Next navigation works
-- [ ] Slide counter shows current/total
+## 3. Layout shell (sidebar + topbar + search + notifications)
 
-**CODE** (Your First Drive Program):
-- [ ] Monaco code editor loads with skeleton code
-- [ ] Brief and hints display
-- [ ] Can edit code and submit
-- [ ] Previously submitted code loads if exists
+### 3.1 Sidebar
+- [ ] Three nav groups visible: **Learn**, **Resources**, **System**
+- [ ] Items use plain words: Dashboard, Courses, Tasks, Grades, Calendar, Lesson Packages, Hardware Kits, Users, Settings
+- [ ] Active item shows cyan left bar + cyan text
+- [ ] Bottom shows your name + role + sign-out icon
+- [ ] Top shows "Online" pip + UTC clock that ticks every second
+- [ ] **Mobile (< 1024px)**: sidebar hidden; hamburger in topbar opens slide-in
+- [ ] Tapping a nav item closes the mobile sidebar
 
-**QUIZ** (Identify Components Quiz):
-- [ ] Questions display with radio button options
-- [ ] Can select answers
-- [ ] Submit shows correct/incorrect per question
-- [ ] Can't change answers after submission
+### 3.2 Topbar
+- [ ] Page title visible on the left (matches the route, e.g. "Dashboard", "Courses")
+- [ ] Date pill on the right (e.g. "Sun, Mar 9")
+- [ ] Search bar visible on desktop; search icon on mobile
+- [ ] User avatar with hover ring
 
-**TASK** (Line Following Challenge):
-- [ ] Brief, requirements checklist, and rubric table display
-- [ ] Can enter code in textarea
-- [ ] Can enter video URL
-- [ ] Submit button works
-- [ ] Shows "Previously submitted" indicator if resubmitting
+### 3.3 Search (NEW — fully working)
+- [ ] Click the search bar OR press **⌘K** / **Ctrl+K** to focus
+- [ ] Type at least 2 characters — dropdown appears
+- [ ] Results are grouped by kind: COURSE, LESSON, PACKAGE, USER (admin only), KIT (teacher/admin only)
+- [ ] **Keyboard nav**: `↑` / `↓` to highlight, `Enter` to open, `Esc` to close
+- [ ] Click any result → navigates to the right page
+- [ ] Type something with no matches → "No matches found for "..."
+- [ ] As STUDENT: search returns only courses you're enrolled in (try searching for a term in a course you're NOT enrolled in — should not appear)
+- [ ] As TEACHER: search returns only your taught courses
+- [ ] As ADMIN: search returns all courses, lessons, users, kits, packages
+- [ ] **Mobile**: tap search icon → full-width search bar opens; `Esc` or back arrow closes
 
-**VIDEO** (if any video lessons exist):
-- [ ] Video player renders with controls
+### 3.4 Notifications (NEW — clickable)
+- [ ] Bell icon in topbar with red dot when notifications exist
+- [ ] Click bell → dropdown shows "Notifications" header with item count
+- [ ] Each item is **clickable** (was previously read-only):
+  - Announcement → goes to `/dashboard#announcement-{id}`
+  - Event → goes to `/calendar?month=YYYY-MM#event-{id}`
+- [ ] "View all in calendar →" link at the bottom
+- [ ] Empty state shows "You're all caught up."
+- [ ] Click outside the dropdown → closes
+- [ ] Each notification shows friendly time: "Today" / "Tomorrow" / "3d ago" / "In 5d" (no `T+/T-` jargon)
 
-#### 1.6 Tasks
-- [ ] Tasks page loads with tab filters: All / Pending / Graded
-- [ ] Switching tabs filters correctly
-- [ ] Table shows lesson title, type badge, status badge, date, grade
-- [ ] Click a task to view detail
-- [ ] Pagination appears if >10 items (may need more submissions to test)
-- [ ] **Mobile**: Table transforms to card layout below 768px
+---
 
-#### 1.7 Task Detail
-- [ ] Breadcrumb shows "Tasks > Lesson Title"
-- [ ] Submission content displays (code/video/quiz answers)
-- [ ] Grade and feedback show if graded
-- [ ] Grade circle color matches score range
+## 4. Dashboard (per role)
 
-#### 1.8 Grades
-- [ ] Summary cards show per-course stats (avg grade, completed tasks)
-- [ ] Grade table lists all graded submissions
-- [ ] Distribution chart shows A/B/C/F breakdown
-- [ ] **Mobile**: Table becomes card stack
+### 4.1 Student dashboard (Marcus)
+- [ ] Header: today's date + "Welcome back, Marcus." + a one-line summary
+- [ ] **Skeleton panels paint in <1s** while data loads, then fill in
+- [ ] Stats cards: Enrolled courses, Pending tasks, Average grade (`/100`), Overall progress (with progress bar)
+- [ ] Announcements panel lists posts with priority badge + relative time
+- [ ] Recent Activity shows submission timeline ("Submitted: …", "Graded: 92/100") with icons per lesson type
+- [ ] Upcoming panel shows date chip (DAY + MON) + event title + days-until pill
 
-#### 1.9 Calendar
-- [ ] Month grid renders with event dots
-- [ ] Navigate between months
-- [ ] Event list shows events for current month
-- [ ] Event type badges color-coded (deadline=yellow, exam=red, event=blue)
+### 4.2 Teacher dashboard (Elena)
+- [ ] Stats: Your courses, Pending reviews, Students, Avg completion
+- [ ] Recent Activity shows student submissions across her courses
 
-#### 1.10 Packages
-- [ ] 3 package cards display (RoboStarter, Explorer, ProBot)
-- [ ] Each shows: name, level, price, course count, lesson count, includes checklist
-- [ ] "Browse Courses" button navigates to courses page
+### 4.3 Admin dashboard
+- [ ] Stats: Total courses, Total users, Hardware kits, Lesson packages
 
-#### 1.11 Settings
-- [ ] Breadcrumb shows "Dashboard > Settings"
+---
+
+## 5. Courses
+
+### 5.1 Browse `/courses`
+- [ ] Header: "Courses" + count
+- [ ] Filter bar: search box, level dropdown (All / Elementary / High school / College), Filter button
+- [ ] Submit filter — list updates; active filters appear as removable chips with a Clear link
+- [ ] **Each card** shows: level badge, tier name, title, description, 3 stat boxes (Modules / Lessons / Students), instructor name. Student view also shows their progress bar.
+- [ ] Empty filter result shows "No courses found"
+- [ ] Hover a card → cyan glow; arrow icon nudges
+
+### 5.2 Course detail `/courses/[id]`
+- [ ] Header: title, level + tier badges, instructor, dates
+- [ ] Module accordion expands/collapses; lesson rows are clickable
+- [ ] **Student**: Enroll button if not enrolled; "Continue" or progress otherwise
+- [ ] **Teacher (own course) / Admin**: Edit + Publish/Unpublish buttons visible
+
+### 5.3 Create + edit (Teacher / Admin)
+- [ ] `/courses/new` form: title, description, level, max students, start/end dates
+- [ ] Submit creates the course → lands on detail page
+- [ ] Validation errors render inline
+- [ ] On `/courses/[id]/edit`:
+  - Add module → appears in list
+  - Add lesson → pick type (Slides / Code / Quiz / Task / Video / **Document**)
+  - Reorder modules + lessons via up/down arrows
+  - Delete module → cascades lessons (confirm dialog appears)
+  - Delete lesson → confirm dialog (DELETE endpoint now exists)
+
+---
+
+## 6. Lessons (each type)
+
+Open one of each type from the Intro to Robotics or Robot Programming course:
+
+### 6.1 SLIDES
+- [ ] Slide viewer renders markdown (bold, lists, code blocks)
+- [ ] Prev/Next nav, slide counter
+- [ ] If a file is also attached, the FileViewer renders below the slides ("Attached resource")
+
+### 6.2 CODE
+- [ ] Monaco editor loads with the skeleton, syntax highlighting on
+- [ ] Brief + hints display above
+- [ ] Submit code → "Submitted" feedback; reload page → previously submitted code restored
+- [ ] **Memory check**: navigate between several CODE lessons in sequence — browser memory should NOT keep climbing (Monaco now disposes properly)
+
+### 6.3 QUIZ
+- [ ] Questions render with radio options
+- [ ] Submit → grades shown per question
+- [ ] After submission, can't change answers
+
+### 6.4 TASK
+- [ ] Brief + requirements + rubric table render
+- [ ] Code textarea + video URL input
+- [ ] Submit → confirmation; previously submitted state shows on reload
+
+### 6.5 VIDEO
+- [ ] Native video player with controls
+
+### 6.6 DOCUMENT (NEW)
+The new file viewer auto-detects the file kind and dispatches:
+
+- [ ] **PDF**: in-browser viewer with page nav (`<` `>`), zoom (`+` `-`), fullscreen, download, open-in-new-tab. Page count visible. Search-indexable text.
+- [ ] **DOCX (Word)**: parses to inline styled HTML. Preserves headings, lists, tables, images, links. Format-warning indicator if mammoth couldn't render some bits.
+- [ ] **PPTX (PowerPoint)**: embeds Microsoft Office Online viewer in an iframe. Note: requires the file URL to be publicly reachable (UploadThing default).
+- [ ] **Images** (png/jpg/gif/webp/svg): centered preview
+- [ ] **Video** (mp4/webm/mov): native player
+- [ ] **Audio** (mp3/wav/ogg): centered with title + audio controls
+- [ ] **Markdown** (.md): rendered with ReactMarkdown + GFM
+- [ ] **Plain text / source code** (.txt/.csv/.py/.js etc): monospace pre with up to 1MB limit
+- [ ] **XLSX / archives / unknown**: shows "Preview not supported" + Download button
+- [ ] All viewers wrap in a unified shell: file name, MIME badge, size, status pip, Fullscreen / Open in new tab / Download buttons in the toolbar
+
+### 6.7 Document upload (Teacher / Admin)
+- [ ] In the Edit Lesson modal, switch lesson type to **Document** (or pick a SLIDES lesson with optional attachment)
+- [ ] Drag a file onto the dropzone OR click "Select file"
+- [ ] Upload progress spinner shows; on complete the file card appears with name, MIME, size
+- [ ] Replace icon → swap to a different file
+- [ ] X icon → remove file
+- [ ] Save lesson → reload → file persists
+
+---
+
+## 7. Tasks
+
+### 7.1 List `/tasks`
+- [ ] Page title: "Tasks" (student) or "Submissions" (teacher/admin)
+- [ ] Subtitle shows pending + graded counts
+- [ ] Tabs: All / Pending / Graded — filter URL updates
+- [ ] Table columns (desktop): Lesson, Course, (Student — teacher view), Type, Status, Submitted, Grade
+- [ ] Pagination appears past 10 items
+- [ ] **Mobile**: table becomes card stack
+
+### 7.2 Detail + grading `/tasks/[id]`
+- [ ] Submission content renders (code block, video player, quiz answers grid)
+- [ ] Already-graded submissions show grade circle + feedback
+- [ ] **Teacher view, ungraded**: grading form with grade (0–100) and feedback textarea
+- [ ] Submit grade → success toast → status flips to GRADED → student's grades page updates next visit
+
+---
+
+## 8. Grades `/grades`
+- [ ] Header: "My grades" / "Class grades" / "All grades" by role
+- [ ] Subtitle: "X graded · Average Y/100"
+- [ ] Course summary cards (per course: avg grade, completion ratio)
+- [ ] Grade table: lesson, course, type, grade circle, feedback preview, date
+- [ ] Distribution chart on the right shows A/B/C/F bars
+- [ ] **Mobile**: table becomes cards
+
+---
+
+## 9. Calendar `/calendar`
+- [ ] Month grid with day cells; today highlighted in cyan
+- [ ] Event dots colored by type (deadline=amber, exam=red, event=blue)
+- [ ] Click `< prev` / `next >` → URL updates `?month=YYYY-MM`
+- [ ] **Teacher / Admin**: "Add Event" button opens modal — title, date, type, optional course
+- [ ] After creating, event appears on grid + list
+- [ ] Delete event with confirm dialog
+
+---
+
+## 10. Lesson Packages `/packages`
+- [ ] 3 cards: RoboStarter, Explorer Toolkit, ProBot Suite
+- [ ] Each card: tier label, name, level badge, description, price (no `$`, separate label), Modules + Lessons stats, includes checklist, asset count badge, **"View courses →"** button
+- [ ] Click "View courses" → goes to `/courses?level=ELEMENTARY` (or HS / COLLEGE)
+- [ ] No "Subscribe / DEPLOY" button pretending to be checkout (intentional — package purchase isn't a real backend feature)
+
+---
+
+## 11. Hardware (Teacher / Admin only)
+
+### 11.1 List `/hardware`
+- [ ] Header: "Hardware kits" + summary "X kits · Y of Z units assigned"
+- [ ] Kit cards: emoji, name, level, specs, total/assigned/available counts, "Assign Kit" button
+- [ ] Active assignments listed below each card with Return button
+- [ ] **Admin only**: "New kit" button visible
+
+### 11.2 Assign / Return
+- [ ] Open Assign modal → student dropdown filtered to those without a current kit
+- [ ] Submit → assignment appears under the kit card
+- [ ] Click "Return" on an assignment → it disappears, available count goes up
+
+### 11.3 Create kit (Admin)
+- [ ] Modal with name, level, total qty, emoji, specs
+- [ ] Submit → kit appears in grid
+
+---
+
+## 12. Users (Admin only) `/users`
+- [ ] Header: "Users" + "X total · Y students · Z teachers · W admins"
+- [ ] Table: avatar, name, email, role, school level, course count, joined date
+- [ ] Search box filters by name/email
+- [ ] Role dropdown filters
+- [ ] Click a row → edit modal: change role, school level, department
+- [ ] Save → success toast → table updates
+
+---
+
+## 13. Settings `/settings`
 - [ ] Profile section: name (editable), email (read-only), department
-- [ ] Can update name and department, shows success toast
-- [ ] Password section: current password, new password, confirm
-- [ ] Password fields have show/hide toggle (eye icon)
-- [ ] Changing password with correct current password works
-- [ ] Wrong current password shows error
-- [ ] Mismatched new/confirm shows error
-- [ ] Unsaved changes warning appears when navigating away with edits
-
-#### 1.12 Enrollment
-- [ ] Navigate to a course Marcus is NOT enrolled in (may need to create one as teacher)
-- [ ] "Enroll in Course" button appears
-- [ ] Clicking it enrolls and refreshes the page
-- [ ] Progress bar now shows 0%
-- [ ] Button disappears after enrollment
+- [ ] Save name change → success toast
+- [ ] Password section: current + new + confirm with eye icons
+- [ ] Wrong current password → error
+- [ ] Mismatched new/confirm → error
+- [ ] Successful change → toast; old password no longer works on next sign-in
 
 ---
 
-### Journey 2: Teacher Experience (Elena)
-
-Login as **elena@proxima.edu**
-
-#### 2.1 Dashboard
-- [ ] Stats show: Active Courses, Pending Reviews, Total Students, Completion Rate
-- [ ] Values are non-zero (3 courses, enrolled students exist)
-
-#### 2.2 Create Course
-- [ ] Navigate to Courses, click "New Course"
-- [ ] Fill in: title, description, level, max students, start/end dates
-- [ ] Submit creates course, redirects to courses list
-- [ ] Validation errors show for missing/invalid fields
-
-#### 2.3 Course Detail — Publish Toggle
-- [ ] Open a course detail page
-- [ ] "Publish" / "Unpublish" button visible
-- [ ] Clicking toggles the published status
-- [ ] Status badge updates (PUBLISHED / DRAFT)
-
-#### 2.4 Course Edit — Module Management
-- [ ] Click "Edit" on a course
-- [ ] Breadcrumb shows "Courses > Course Title > Edit"
-- [ ] Existing modules and lessons listed
-- [ ] **Add Module**: Enter title, submit — module appears
-- [ ] **Reorder Modules**: Up/down arrows swap module positions
-- [ ] **Delete Module**: Trash icon shows confirmation dialog, deleting removes module + lessons
-
-#### 2.5 Course Edit — Lesson Management
-- [ ] **Add Lesson**: Select type (SLIDES/CODE/QUIZ/TASK/VIDEO), enter title, submit
-- [ ] New lesson appears with warning icon (no content yet)
-- [ ] **Reorder Lessons**: Up/down arrows work within module
-- [ ] **Delete Lesson**: Trash icon shows confirmation dialog
-
-#### 2.6 Lesson Content Editing
-Click each lesson to open the edit modal:
-
-**SLIDES editor**:
-- [ ] Add/remove slides
-- [ ] Edit slide title and markdown body
-- [ ] Save persists content
-- [ ] Warning icon disappears after saving content
-
-**CODE editor**:
-- [ ] Edit brief/instructions
-- [ ] Edit code skeleton (dark theme textarea)
-- [ ] Add/remove hints
-- [ ] Save persists all fields
-
-**QUIZ editor**:
-- [ ] Add/remove questions
-- [ ] Edit question text
-- [ ] Edit 4 options per question
-- [ ] Select correct answer via radio button
-- [ ] Save persists quiz data
-
-**TASK editor**:
-- [ ] Edit task brief
-- [ ] Add/remove requirements
-- [ ] Add/remove rubric criteria (category + description)
-- [ ] Save persists task content
-
-**VIDEO editor**:
-- [ ] Enter video URL
-- [ ] Save persists URL
-
-#### 2.7 Tasks — Teacher View
-- [ ] Tasks page shows ALL student submissions for Elena's courses
-- [ ] "Student" column visible
-- [ ] Can filter by All/Pending/Graded tabs
-
-#### 2.8 Grading
-- [ ] Click a SUBMITTED task
-- [ ] Grading form appears with grade input (0-100) and feedback textarea
-- [ ] Submit grade — success toast
-- [ ] Submission status changes to GRADED
-- [ ] Student's grades page updates (revalidated)
-- [ ] Student's enrollment progress recalculates
-
-#### 2.9 Calendar — Event Management
-- [ ] "Add Event" button visible
-- [ ] Create event with title, date, type, optional course
-- [ ] Event appears on calendar grid and event list
-- [ ] Delete event: trash icon, confirmation dialog, event removed
-
-#### 2.10 Hardware
-- [ ] Hardware page shows kit cards
-- [ ] Each kit shows: emoji, name, specs, level, total/assigned/available counts
-- [ ] "Assign Kit" button works — opens student selection
-- [ ] Assigned students shown below kit card with "Return" button
-- [ ] Clicking "Return" marks kit as returned
+## 14. Mobile / responsive (< 768px)
+- [ ] Sidebar hidden; hamburger opens it
+- [ ] Topbar search collapses to icon → full-screen takeover when tapped
+- [ ] Stats grid becomes 1-2 columns
+- [ ] Tables become card stacks (Tasks, Grades, Users)
+- [ ] Touch targets feel ≥44px
+- [ ] Page titles smaller (28px), still readable
+- [ ] Course cards stack 1-up
+- [ ] Modals: full-width with 16px margin
 
 ---
 
-### Journey 3: Admin Experience
-
-Login as **admin@proxima.edu**
-
-#### 3.1 Dashboard
-- [ ] Stats show: Total Courses, Active Users, Hardware Kits, Packages
-
-#### 3.2 Users Management
-- [ ] Navigate to Users in sidebar (only visible for Admin)
-- [ ] User table shows all 5 users with: avatar, name, email, role, level, courses, joined
-- [ ] **Mobile**: Table becomes card stack
-- [ ] Click a user row — edit modal opens
-- [ ] Can change role (Student/Teacher/Admin)
-- [ ] Can change department and school level
-- [ ] Save shows success toast, table updates
-
-#### 3.3 Hardware Kit Creation
-- [ ] "New Kit" button visible (Admin only)
-- [ ] Modal: name, emoji, level, quantity, specifications
-- [ ] Create kit — appears in grid
-- [ ] Can assign/return kits same as teacher
-
-#### 3.4 Full Access
-- [ ] Can edit ANY course (not just own)
-- [ ] Can grade ANY submission
-- [ ] Can create/delete calendar events
-- [ ] Can access all pages
+## 15. Performance / streaming (NEW)
+- [ ] After signing in, `/dashboard` should show **shell + skeletons within ~500ms**
+- [ ] Each panel (stats, announcements, activity, upcoming) fills in independently as its query finishes — never a fully blank page
+- [ ] Open `/courses` then a course detail — navigation feels snappy (no 4-5s pause)
 
 ---
 
-### Journey 4: Auth & Security
-
-#### 4.1 Registration
-- [ ] Navigate to /register
-- [ ] Fill in name, email, password (6+ chars), confirm password
-- [ ] Select role: Student or Teacher
-- [ ] If Student: school level dropdown appears
-- [ ] Submit — auto signs in, redirects to dashboard
-- [ ] Duplicate email shows error
-
-#### 4.2 Login
-- [ ] Navigate to /login
-- [ ] Wrong credentials show "Invalid email or password"
-- [ ] Correct credentials redirect to /dashboard
-- [ ] Password field has show/hide toggle
-
-#### 4.3 Route Protection
-- [ ] Visiting /dashboard while logged out redirects to /login
-- [ ] Visiting /login while logged in redirects to /dashboard
-- [ ] Students visiting /users redirects to /dashboard
-- [ ] Students visiting /hardware redirects to /dashboard
+## 16. Edge cases
+- [ ] Brand-new teacher account with no courses → empty state messages, not crashes
+- [ ] Course at capacity (set `maxStudents=1`, enroll one) → second enrollment shows "Course is full"
+- [ ] Quiz lesson with no questions → "No quiz questions available yet"
+- [ ] Empty notifications → "You're all caught up."
+- [ ] Empty search results → "No matches found for "..."
+- [ ] Long titles, descriptions, feedback → truncates with `...` and doesn't break layout
+- [ ] Submitting a TASK with neither code nor video → form shows what's required (or accepts and saves draft)
+- [ ] Student trying to access teacher-only API endpoint directly (e.g. POST `/api/courses`) → 403 Forbidden
 
 ---
 
-### Journey 5: Responsive / Mobile
-
-Test at mobile width (< 768px) or using browser dev tools:
-
-#### 5.1 Navigation
-- [ ] Sidebar hidden, hamburger menu visible
-- [ ] Tapping hamburger opens sidebar overlay
-- [ ] Tapping a nav item closes sidebar
-- [ ] Close button (X) dismisses sidebar
-
-#### 5.2 Mobile Search
-- [ ] Search icon visible in topbar (replaces desktop search bar)
-- [ ] Tapping expands full-width search input
-- [ ] Back arrow or Escape closes search
-- [ ] Input auto-focuses on open
-
-#### 5.3 Tables → Card Stacks
-- [ ] Tasks table: becomes clickable cards with title, badges, grade
-- [ ] Grades table: becomes cards with lesson, course, grade circle, feedback preview
-- [ ] Users table (admin): becomes cards with avatar, name, email, badges
-
-#### 5.4 Touch Targets
-- [ ] Buttons feel comfortable to tap (44px min height)
-- [ ] Input fields are taller on mobile (44px)
-- [ ] Icon buttons in topbar are easy to tap
-
-#### 5.5 Typography & Layout
-- [ ] Page titles are smaller on mobile (20px vs 24px desktop)
-- [ ] Stat card values scale down (24px vs 32px)
-- [ ] Page headers stack vertically on small screens
-- [ ] Course detail metadata wraps properly
-- [ ] Content has max-width on ultra-wide screens
-
-#### 5.6 Loading States
-- [ ] Navigate between pages — skeleton loading screens appear briefly
-- [ ] Skeletons match the actual page layout shape
-
----
-
-## Common Edge Cases to Test
-
-- [ ] Empty states: Create a new teacher account, verify empty course/task lists show messages
-- [ ] Course at capacity: Set maxStudents to 1, enroll one student, verify second gets "Course is full"
-- [ ] Quiz with no questions: Create a QUIZ lesson, view it without adding questions — should show "No quiz questions available yet"
-- [ ] Notification dropdown with no items: Should show "No new notifications"
-- [ ] Long text: Course titles, lesson names, feedback — verify truncation and layout doesn't break
-
----
-
-## Browser Compatibility
-
-Test on:
-- [ ] Chrome (latest)
+## 17. Browser matrix
+- [ ] Chrome (latest) — primary target
 - [ ] Firefox (latest)
 - [ ] Safari (latest)
-- [ ] Mobile Safari (iOS)
-- [ ] Chrome Android
+- [ ] Mobile Safari (iOS 16+)
+- [ ] Chrome on Android
+
+> **Known**: MetaMask and other wallet extensions inject errors into the dev overlay (`Failed to connect to MetaMask`). These are harmless — disable the extension or test in incognito if it's distracting.
+
+---
+
+## Bug report template
+
+When you find something, file it like this:
+
+```
+**Page / Feature:** (e.g. /lessons/[id] — DOCX viewer)
+**Role:** Student | Teacher | Admin
+**Browser:** Chrome 121 / Safari 17 / etc.
+**Steps to reproduce:**
+1. Sign in as marcus@student.proxima.edu
+2. Open the lesson "Robot Anatomy"
+3. Click the attachment
+
+**Expected:** Inline DOCX preview
+**Actual:** Blank panel, console error "Failed to fetch"
+**Screenshot / video:** (attach)
+**Notes:** Happens 100% on Safari only; works on Chrome
+```
+
+---
+
+## Quick health check (5 min smoke test)
+
+If you only have 5 minutes, run this:
+
+1. Sign in as Marcus → Dashboard renders → click into a course → click a SLIDES lesson → click a CODE lesson and submit a one-line edit → check Tasks page shows it
+2. Sign out → sign in as Elena → Tasks page → grade Marcus's submission → check Marcus's Grades page reflects it
+3. Use ⌘K → search for "robotics" → arrow-down → Enter → lands on the lesson
+4. Click the bell → click an event notification → lands on Calendar at the right month
+5. Open `/login` in incognito with `?reason=session_expired` in the URL → friendly message shows
+
+If all five work, the deployment is healthy.

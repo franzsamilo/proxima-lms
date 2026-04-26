@@ -51,6 +51,7 @@ export function AddLessonForm({ moduleId }: AddLessonFormProps) {
         <option value="QUIZ">Quiz</option>
         <option value="TASK">Task</option>
         <option value="VIDEO">Video</option>
+        <option value="DOCUMENT">Document</option>
       </Select>
       <Button type="submit" size="sm" disabled={isPending} className="h-8">
         <Plus size={12} className="mr-1" />

@@ -1,265 +1,152 @@
 "use client"
 
-import { useState } from "react"
+import { useActionState, useState } from "react"
 import Link from "next/link"
-import { signIn } from "next-auth/react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { PasswordInput } from "@/components/ui/password-input"
-import { Select } from "@/components/ui/select"
+import { AuthFrame } from "@/components/auth/auth-frame"
+import { TerminalInput, TerminalPasswordInput, TerminalSelect } from "@/components/auth/terminal-input"
+import { ProtocolButton } from "@/components/ui/protocol-button"
+import { AlertOctagon, ArrowRight } from "lucide-react"
+import { registerAction, type RegisterActionResult } from "@/actions/auth-actions"
 
 type Role = "STUDENT" | "TEACHER"
 type SchoolLevel = "ELEMENTARY" | "HS" | "COLLEGE"
 
-interface FieldErrors {
-  name?: string
-  email?: string
-  password?: string
-  confirmPassword?: string
-  general?: string
-}
-
 export default function RegisterPage() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [role, setRole] = useState<Role>("STUDENT")
   const [schoolLevel, setSchoolLevel] = useState<SchoolLevel>("HS")
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<FieldErrors>({})
 
-  function validate(): boolean {
-    const next: FieldErrors = {}
-    if (!name.trim()) next.name = "Name is required."
-    if (!email.trim()) next.email = "Email is required."
-    if (!password) next.password = "Password is required."
-    else if (password.length < 6) next.password = "Password must be at least 6 characters."
-    if (password !== confirmPassword) next.confirmPassword = "Passwords do not match."
-    setErrors(next)
-    return Object.keys(next).length === 0
-  }
+  const [state, formAction, isPending] = useActionState<RegisterActionResult, FormData>(
+    async (_prev, formData) => registerAction(formData),
+    undefined
+  )
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!validate()) return
-
-    setIsLoading(true)
-    setErrors({})
-
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-          ...(role === "STUDENT" ? { schoolLevel } : {}),
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        if (data.errors) {
-          setErrors(data.errors)
-        } else {
-          setErrors({ general: data.message || "Registration failed. Please try again." })
-        }
-        return
-      }
-
-      // Auto sign in after successful registration
-      await signIn("credentials", {
-        email,
-        password,
-        redirectTo: "/dashboard",
-      })
-    } catch {
-      setErrors({ general: "Something went wrong. Please try again." })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const fieldErrors = state?.ok === false ? state.fieldErrors ?? {} : {}
+  const generalError = state?.ok === false ? state.error : null
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      {/* Logo Block */}
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-signal to-[#0EA5A0] flex items-center justify-center">
-          <span className="font-[family-name:var(--font-family-display)] text-2xl font-extrabold text-white">
-            P
-          </span>
+    <AuthFrame
+      eyebrow="Get started"
+      title="Create your account"
+      subtitle="Sign up as a student or teacher."
+    >
+      <form action={formAction} className="flex flex-col gap-5">
+        <TerminalInput
+          id="name"
+          name="name"
+          label="Full name"
+          placeholder="Elena Torres"
+          autoComplete="name"
+          required
+          disabled={isPending}
+          error={fieldErrors.name}
+        />
+
+        <TerminalInput
+          id="email"
+          name="email"
+          type="email"
+          label="Email"
+          placeholder="you@school.edu"
+          autoComplete="email"
+          required
+          disabled={isPending}
+          error={fieldErrors.email}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <TerminalPasswordInput
+            id="password"
+            name="password"
+            label="Password"
+            autoComplete="new-password"
+            required
+            disabled={isPending}
+            error={fieldErrors.password}
+          />
+          <TerminalPasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            label="Confirm"
+            autoComplete="new-password"
+            required
+            disabled={isPending}
+            error={fieldErrors.confirmPassword}
+          />
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="font-[family-name:var(--font-family-display)] text-2xl font-extrabold tracking-[6px] bg-clip-text text-transparent bg-gradient-to-r from-signal to-[#0EA5A0]">
-            PROXIMA
+
+        <input type="hidden" name="role" value={role} />
+        <div className="flex flex-col gap-2">
+          <span className="font-[family-name:var(--font-family-body)] text-[12px] font-medium text-ink-secondary">
+            I am a…
           </span>
-          <span className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[4px] text-ink-ghost uppercase">
-            ROBOTICS LMS
-          </span>
-        </div>
-      </div>
-
-      {/* Card */}
-      <div className="w-full bg-surface-2 border border-edge rounded-[var(--radius-lg)] p-8">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Name */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="name"
-              className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[1.5px] uppercase text-ink-ghost"
-            >
-              Full Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Elena Torres"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-            />
-            {errors.name && (
-              <p className="text-[11px] text-danger">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="email"
-              className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[1.5px] uppercase text-ink-ghost"
-            >
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@proxima.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-            {errors.email && (
-              <p className="text-[11px] text-danger">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="password"
-              className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[1.5px] uppercase text-ink-ghost"
-            >
-              Password
-            </label>
-            <PasswordInput
-              id="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-            {errors.password && (
-              <p className="text-[11px] text-danger">{errors.password}</p>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="confirmPassword"
-              className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[1.5px] uppercase text-ink-ghost"
-            >
-              Confirm Password
-            </label>
-            <PasswordInput
-              id="confirmPassword"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-            {errors.confirmPassword && (
-              <p className="text-[11px] text-danger">{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          {/* Role Toggle */}
-          <div className="flex flex-col gap-1.5">
-            <span className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[1.5px] uppercase text-ink-ghost">
-              Role
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              {(["STUDENT", "TEACHER"] as Role[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={[
-                    "h-10 rounded-[var(--radius-md)] border font-[family-name:var(--font-family-body)] text-[12px] font-semibold transition-all duration-200",
-                    role === r
-                      ? "bg-signal-muted text-signal border-signal"
-                      : "bg-surface-3 text-ink-secondary border-edge hover:border-edge-strong hover:text-ink-primary",
-                  ].join(" ")}
-                >
+          <div className="grid grid-cols-2 gap-2">
+            {(["STUDENT", "TEACHER"] as Role[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                disabled={isPending}
+                className={[
+                  "relative h-10 rounded-[6px] border font-[family-name:var(--font-family-body)] text-[13px] font-medium transition-all duration-200 disabled:opacity-50",
+                  role === r
+                    ? "bg-signal-muted text-signal border-signal shadow-[0_0_0_3px_var(--color-signal-glow)]"
+                    : "bg-surface-3/60 text-ink-secondary border-edge hover:border-edge-strong hover:text-ink-primary",
+                ].join(" ")}
+              >
+                <span className="relative">
+                  {role === r && <span className="mr-2 text-signal">●</span>}
                   {r === "STUDENT" ? "Student" : "Teacher"}
-                </button>
-              ))}
-            </div>
+                </span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* School Level (Student only) */}
-          {role === "STUDENT" && (
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="schoolLevel"
-                className="font-[family-name:var(--font-family-mono)] text-[10px] font-medium tracking-[1.5px] uppercase text-ink-ghost"
-              >
-                School Level
-              </label>
-              <Select
-                id="schoolLevel"
-                value={schoolLevel}
-                onChange={(e) => setSchoolLevel(e.target.value as SchoolLevel)}
-              >
-                <option value="ELEMENTARY">Elementary</option>
-                <option value="HS">High School</option>
-                <option value="COLLEGE">College</option>
-              </Select>
-            </div>
-          )}
+        {role === "STUDENT" && (
+          <TerminalSelect
+            id="schoolLevel"
+            name="schoolLevel"
+            label="School level"
+            value={schoolLevel}
+            onChange={(e) => setSchoolLevel(e.target.value as SchoolLevel)}
+            disabled={isPending}
+          >
+            <option value="ELEMENTARY">Elementary</option>
+            <option value="HS">High school</option>
+            <option value="COLLEGE">College</option>
+          </TerminalSelect>
+        )}
 
-          {/* General Error */}
-          {errors.general && (
-            <p className="text-[12px] text-danger bg-danger-tint border border-danger/20 rounded-[var(--radius-md)] px-3 py-2">
-              {errors.general}
+        {generalError && (
+          <div className="flex items-start gap-2 rounded-[6px] border border-danger/40 bg-danger-tint px-3 py-2.5">
+            <AlertOctagon size={14} className="mt-0.5 shrink-0 text-danger" />
+            <p className="font-[family-name:var(--font-family-mono)] text-[11px] tracking-wide text-danger leading-relaxed">
+              {generalError}
             </p>
-          )}
+          </div>
+        )}
 
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full mt-1"
-            disabled={isLoading}
-          >
-            {isLoading ? "Creating account..." : "Create Account"}
-          </Button>
-        </form>
+        <ProtocolButton type="submit" disabled={isPending} loading={isPending}>
+          {isPending ? "Creating account…" : "Create account"}
+          {!isPending && <ArrowRight size={14} />}
+        </ProtocolButton>
+      </form>
 
-        <p className="mt-6 text-center font-[family-name:var(--font-family-body)] text-[13px] text-ink-tertiary">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-signal hover:text-signal-hover transition-colors duration-200"
-          >
-            Sign in
-          </Link>
-        </p>
+      <div className="mt-7 flex items-center gap-3">
+        <span className="h-px flex-1 bg-edge" />
+        <span className="font-[family-name:var(--font-family-body)] text-[12px] text-ink-tertiary">
+          Already have an account?
+        </span>
+        <span className="h-px flex-1 bg-edge" />
       </div>
-    </div>
+
+      <Link
+        href="/login"
+        className="mt-4 group flex items-center justify-center gap-2 font-[family-name:var(--font-family-body)] text-[13px] text-ink-secondary hover:text-signal transition-colors duration-200"
+      >
+        Sign in
+        <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    </AuthFrame>
   )
 }

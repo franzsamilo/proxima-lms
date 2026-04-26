@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -31,6 +32,7 @@ enum LessonType {
   QUIZ
   TASK
   VIDEO
+  DOCUMENT
 }
 
 enum SubmissionStatus {
@@ -169,6 +171,10 @@ model Lesson {
   durationMins  Int        @default(30)
   content       Json?
   codeSkeleton  String?    @db.Text
+  fileUrl       String?
+  fileName      String?
+  fileMime      String?
+  fileSize      Int?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 

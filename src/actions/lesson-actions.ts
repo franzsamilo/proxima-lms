@@ -73,6 +73,16 @@ export async function updateLesson(lessonId: string, formData: FormData) {
   const codeSkeleton = formData.get("codeSkeleton")
   if (codeSkeleton !== null) updateData.codeSkeleton = String(codeSkeleton)
 
+  // File attachment fields. "" means clear; null means skip.
+  const fileUrl = formData.get("fileUrl")
+  if (fileUrl !== null) updateData.fileUrl = fileUrl === "" ? null : String(fileUrl)
+  const fileName = formData.get("fileName")
+  if (fileName !== null) updateData.fileName = fileName === "" ? null : String(fileName)
+  const fileMime = formData.get("fileMime")
+  if (fileMime !== null) updateData.fileMime = fileMime === "" ? null : String(fileMime)
+  const fileSize = formData.get("fileSize")
+  if (fileSize !== null) updateData.fileSize = fileSize === "" ? null : Number(fileSize)
+
   await prisma.lesson.update({
     where: { id: lessonId },
     data: updateData,

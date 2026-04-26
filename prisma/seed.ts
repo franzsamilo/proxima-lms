@@ -3,7 +3,53 @@ import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
+const isProd = process.env.NODE_ENV === "production"
+
+/**
+ * Production-safe bootstrap: idempotently create or update an admin user
+ * from env vars. No demo data, no destructive deletes. Safe to run repeatedly.
+ */
+async function bootstrapAdminFromEnv() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase()
+  const password = process.env.ADMIN_PASSWORD
+  const name = process.env.ADMIN_NAME?.trim() || "Site Administrator"
+
+  if (!email || !password) {
+    console.error(
+      "[seed] ADMIN_EMAIL and ADMIN_PASSWORD env vars are required for production seeding."
+    )
+    process.exit(1)
+  }
+  if (password.length < 12) {
+    console.error("[seed] ADMIN_PASSWORD must be at least 12 characters in production.")
+    process.exit(1)
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12)
+  const result = await prisma.user.upsert({
+    where: { email },
+    create: { email, name, passwordHash, role: Role.ADMIN },
+    update: { name, passwordHash, role: Role.ADMIN },
+    select: { id: true, email: true, role: true },
+  })
+  console.log(`[seed] Bootstrapped admin: ${result.email} (${result.id})`)
+}
+
 async function main() {
+  if (isProd) {
+    if (process.env.SEED_ALLOW_PRODUCTION !== "true") {
+      console.error(
+        "[seed] Refusing to run in production. Set SEED_ALLOW_PRODUCTION=true to override.\n" +
+          "       In production this only bootstraps an admin from ADMIN_EMAIL/ADMIN_PASSWORD —\n" +
+          "       it does NOT create demo data or wipe tables."
+      )
+      process.exit(1)
+    }
+    await bootstrapAdminFromEnv()
+    return
+  }
+
+  // Dev mode below — original destructive demo seed.
   await prisma.submission.deleteMany()
   await prisma.lesson.deleteMany()
   await prisma.module.deleteMany()
@@ -20,6 +66,10 @@ async function main() {
   await prisma.user.deleteMany()
 
   const passwordHash = await bcrypt.hash("password123", 12)
+  // Optional dev override of the admin password — useful for testing.
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "password123"
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase() ?? "admin@proxima.edu"
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 12)
 
   // ─── Users ───
   const teacher = await prisma.user.create({
@@ -35,7 +85,7 @@ async function main() {
     data: { name: "Jake Morrison", email: "jake@student.proxima.edu", passwordHash, role: Role.STUDENT, schoolLevel: SchoolLevel.ELEMENTARY },
   })
   const admin = await prisma.user.create({
-    data: { name: "System Admin", email: "admin@proxima.edu", passwordHash, role: Role.ADMIN },
+    data: { name: "System Admin", email: adminEmail, passwordHash: adminPasswordHash, role: Role.ADMIN },
   })
 
   // ─── Lesson Packages ───
@@ -236,13 +286,13 @@ async function main() {
     { title: "Final Projects Due — All Courses", date: new Date("2026-05-15"), type: "deadline" },
   ] })
 
-  console.log("✅ Seed complete")
-  console.log("Demo accounts (password: password123):")
+  console.log("✅ Seed complete (dev mode)")
+  console.log("Demo accounts (password: password123 unless overridden):")
   console.log("  Teacher:  elena@proxima.edu")
   console.log("  Student:  marcus@student.proxima.edu")
   console.log("  Student:  aisha@student.proxima.edu")
   console.log("  Student:  jake@student.proxima.edu")
-  console.log("  Admin:    admin@proxima.edu")
+  console.log(`  Admin:    ${adminEmail}`)
 }
 
 main()

@@ -1,4 +1,6 @@
 import { CourseCard } from "./course-card"
+import { Panel } from "@/components/ui/panel"
+import { Inbox } from "lucide-react"
 
 interface CourseListProps {
   courses: Array<{
@@ -18,22 +20,24 @@ interface CourseListProps {
 export function CourseList({ courses, currentUserId }: CourseListProps) {
   if (courses.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="font-[family-name:var(--font-family-body)] text-[14px] text-ink-tertiary">
-          No courses found.
-        </p>
-      </div>
+      <Panel variant="outline" padding="lg">
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+          <Inbox size={32} className="text-ink-ghost" />
+          <h3 className="font-[family-name:var(--font-family-display)] text-[16px] font-semibold text-ink-primary">
+            No courses found
+          </h3>
+          <p className="font-[family-name:var(--font-family-body)] text-[13px] text-ink-tertiary max-w-xs">
+            Adjust your filters or check back later.
+          </p>
+        </div>
+      </Panel>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {courses.map((course) => (
-        <CourseCard
-          key={course.id}
-          course={course}
-          currentUserId={currentUserId}
-        />
+        <CourseCard key={course.id} course={course} currentUserId={currentUserId} />
       ))}
     </div>
   )

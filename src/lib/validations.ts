@@ -35,10 +35,14 @@ export const createModuleSchema = z.object({
 
 export const createLessonSchema = z.object({
   title: z.string().min(2).max(100),
-  type: z.enum(["SLIDES", "CODE", "QUIZ", "TASK", "VIDEO"]),
+  type: z.enum(["SLIDES", "CODE", "QUIZ", "TASK", "VIDEO", "DOCUMENT"]),
   durationMins: z.number().int().min(1).max(480).default(30),
   content: z.any().optional(),
   codeSkeleton: z.string().optional(),
+  fileUrl: z.string().url().optional().nullable(),
+  fileName: z.string().max(260).optional().nullable(),
+  fileMime: z.string().max(120).optional().nullable(),
+  fileSize: z.number().int().min(0).optional().nullable(),
   moduleId: z.string().cuid(),
 })
 

@@ -106,3 +106,43 @@ export async function PATCH(
   revalidatePath(`/courses/${lesson.module.courseId}`)
   return NextResponse.json(updated)
 }
+
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ lessonId: string }> }
+) {
+  const { lessonId } = await props.params
+  const session = await auth()
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const userRole = session.user.role
+  if (userRole === "STUDENT") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: { module: { select: { courseId: true, course: { select: { instructorId: true } } } } },
+  })
+
+  if (!lesson) {
+    return NextResponse.json({ error: "Lesson not found" }, { status: 404 })
+  }
+
+  if (userRole === "TEACHER" && lesson.module.course.instructorId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  // Hard-delete the lesson and any submissions it has via cascade rules.
+  // (Submission has @relation onDelete by default — restrict in our schema, so
+  // we explicitly remove submissions first to keep the operation safe.)
+  await prisma.$transaction([
+    prisma.submission.deleteMany({ where: { lessonId } }),
+    prisma.lesson.delete({ where: { id: lessonId } }),
+  ])
+
+  revalidatePath(`/courses/${lesson.module.courseId}`)
+  return NextResponse.json({ ok: true })
+}

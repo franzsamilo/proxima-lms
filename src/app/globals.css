@@ -1,92 +1,383 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Backgrounds (3-tier depth system) ── */
-  --color-surface-0: #06090F;        /* Deepest — page background, the "void" */
-  --color-surface-1: #0C1119;        /* Mid layer — sidebar, topbar, modal overlays */
-  --color-surface-2: #121926;        /* Card/panel surfaces — where content lives */
-  --color-surface-3: #1A2235;        /* Elevated — hovered cards, active elements, dropdowns */
+  /* ── Backgrounds (4-tier depth) ── */
+  --color-surface-0: #05080E;
+  --color-surface-1: #0A0F18;
+  --color-surface-2: #111826;
+  --color-surface-3: #1A2335;
+  --color-surface-4: #232E45;
 
   /* ── Borders ── */
-  --color-edge: #1C2536;             /* Default border — subtle, almost invisible */
-  --color-edge-strong: #2A3650;      /* Emphasized border — hover states, focused inputs */
+  --color-edge: #1B2435;
+  --color-edge-strong: #2C3854;
+  --color-edge-bright: #3F4E72;
 
-  /* ── Text (4-tier hierarchy) ── */
-  --color-ink-primary: #E4E8F1;      /* Headings, active nav, important labels */
-  --color-ink-secondary: #94A0B8;    /* Body text, descriptions, table cells */
-  --color-ink-tertiary: #5C6A82;     /* Metadata, timestamps, helper text */
-  --color-ink-ghost: #3B4560;        /* Disabled text, empty states, placeholder */
+  /* ── Text hierarchy ── */
+  --color-ink-primary: #E8ECF5;
+  --color-ink-secondary: #94A0B8;
+  --color-ink-tertiary: #5C6A82;
+  --color-ink-ghost: #3B4560;
 
-  /* ── Accent (cyan-teal spectrum) ── */
-  --color-signal: #22D3B7;           /* Primary accent — buttons, links, progress fills, active indicators */
-  --color-signal-hover: #34E8CC;     /* Accent hover — slightly brighter, not a different hue */
-  --color-signal-muted: rgba(34, 211, 183, 0.12);  /* Accent background tint — active nav bg, badge bg */
-  --color-signal-glow: rgba(34, 211, 183, 0.25);   /* Focus rings, hover shadows */
+  /* ── Signal (cyan-teal accent) ── */
+  --color-signal: #22D3B7;
+  --color-signal-hover: #5BE9D2;
+  --color-signal-deep: #0EA5A0;
+  --color-signal-muted: rgba(34, 211, 183, 0.12);
+  --color-signal-glow: rgba(34, 211, 183, 0.28);
+  --color-signal-faint: rgba(34, 211, 183, 0.04);
 
-  /* ── Semantic colors ── */
-  --color-success: #34D399;          /* Graded, completed, published */
-  --color-warning: #FBBF24;          /* Pending, submitted, low stock */
-  --color-danger: #F87171;           /* Errors, overdue, failed */
-  --color-info: #60A5FA;             /* In progress, informational */
-  --color-purple: #A78BFA;           /* Code-related, tier badges */
+  /* ── Plasma (warm secondary accent — used surgically) ── */
+  --color-plasma: #FF7849;
+  --color-plasma-muted: rgba(255, 120, 73, 0.12);
 
-  /* ── Semantic tints (for badge/tag backgrounds) ── */
+  /* ── Semantic ── */
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-danger: #F87171;
+  --color-info: #60A5FA;
+  --color-purple: #A78BFA;
+
+  /* ── Tints ── */
   --color-success-tint: rgba(52, 211, 153, 0.12);
   --color-warning-tint: rgba(251, 191, 36, 0.12);
   --color-danger-tint: rgba(248, 113, 113, 0.12);
   --color-info-tint: rgba(96, 165, 250, 0.12);
   --color-purple-tint: rgba(167, 139, 250, 0.12);
 
-  /* ── Radii ── */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* ── Radii (sharper) ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
   /* ── Shadows ── */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--color-edge);
-  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--color-edge-strong);
-  --shadow-glow: 0 0 20px var(--color-signal-glow);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.25), inset 0 0 0 1px var(--color-edge);
+  --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.45), inset 0 0 0 1px var(--color-edge-strong);
+  --shadow-glow: 0 0 24px var(--color-signal-glow);
+  --shadow-rim: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-  /* ── Font families ── */
+  /* ── Fonts ── */
   --font-family-display: var(--font-display), system-ui, sans-serif;
   --font-family-body: var(--font-body), system-ui, sans-serif;
   --font-family-mono: var(--font-mono), ui-monospace, monospace;
 }
 
+* {
+  border-color: var(--color-edge);
+}
+
+html, body {
+  background-color: var(--color-surface-0);
+}
+
 body {
   font-family: var(--font-family-body);
-  background-color: var(--color-surface-0);
   color: var(--color-ink-secondary);
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fade in — for page content on mount */
+/* ────────────────────────────────────────────────────────────
+   Typography utilities
+   ──────────────────────────────────────────────────────────── */
+
+.font-display { font-family: var(--font-family-display); }
+.font-body { font-family: var(--font-family-body); }
+.font-mono { font-family: var(--font-family-mono); font-variant-numeric: tabular-nums slashed-zero; }
+
+.tabular { font-variant-numeric: tabular-nums slashed-zero; }
+
+.eyebrow {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-ghost);
+}
+
+.telemetry {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.display-xl {
+  font-family: var(--font-family-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+}
+
+.display-lg {
+  font-family: var(--font-family-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+/* Gradient text — signal */
+.text-signal-gradient {
+  background-image: linear-gradient(135deg, var(--color-signal) 0%, var(--color-signal-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Gradient text — sun rim (signal → warm) */
+.text-rim-gradient {
+  background-image: linear-gradient(120deg, #E8ECF5 0%, var(--color-signal) 50%, #6BC9FF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Bracket corners — used on Panels, Cards
+   ──────────────────────────────────────────────────────────── */
+
+.bracket-frame {
+  position: relative;
+}
+.bracket-frame::before,
+.bracket-frame::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--color-signal);
+  pointer-events: none;
+}
+.bracket-frame::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.bracket-frame::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+.bracket-frame-4 > .bracket {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  border-color: var(--color-signal);
+}
+.bracket-frame-4 > .bracket.tl { top: -1px; left: -1px; border-top: 1px solid; border-left: 1px solid; }
+.bracket-frame-4 > .bracket.tr { top: -1px; right: -1px; border-top: 1px solid; border-right: 1px solid; }
+.bracket-frame-4 > .bracket.bl { bottom: -1px; left: -1px; border-bottom: 1px solid; border-left: 1px solid; }
+.bracket-frame-4 > .bracket.br { bottom: -1px; right: -1px; border-bottom: 1px solid; border-right: 1px solid; }
+
+/* ────────────────────────────────────────────────────────────
+   Grid + scanline backgrounds
+   ──────────────────────────────────────────────────────────── */
+
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(34, 211, 183, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34, 211, 183, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-grid-fine {
+  background-image:
+    linear-gradient(to right, rgba(94, 106, 130, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(94, 106, 130, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-radial-vignette {
+  background-image: radial-gradient(ellipse at center, transparent 0%, var(--color-surface-0) 75%);
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.bg-scanline {
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.012) 3px,
+    rgba(255, 255, 255, 0.012) 4px
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+   Tick mark accent — used on dividers, panel headers
+   ──────────────────────────────────────────────────────────── */
+
+.tick-rule {
+  background-image:
+    linear-gradient(to right, var(--color-edge) 1px, transparent 1px);
+  background-size: 8px 100%;
+  background-repeat: repeat-x;
+  height: 6px;
+}
+
+.tick-rule-strong {
+  background-image:
+    linear-gradient(to right, var(--color-edge-strong) 1px, transparent 1px);
+  background-size: 8px 100%;
+  background-repeat: repeat-x;
+  height: 6px;
+}
+
+/* Vertical tick — used for sidebar active indicator */
+.tick-vert {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color-signal) 0,
+    var(--color-signal) 2px,
+    transparent 2px,
+    transparent 5px
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+   Status dot pulse
+   ──────────────────────────────────────────────────────────── */
+
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-signal);
+}
+.status-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--color-signal);
+  opacity: 0.4;
+  animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.status-dot.warn { background: var(--color-warning); }
+.status-dot.warn::after { background: var(--color-warning); }
+.status-dot.danger { background: var(--color-danger); }
+.status-dot.danger::after { background: var(--color-danger); }
+.status-dot.idle { background: var(--color-ink-tertiary); }
+.status-dot.idle::after { display: none; }
+
+@keyframes ping {
+  0% { transform: scale(1); opacity: 0.45; }
+  80%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   Animations
+   ──────────────────────────────────────────────────────────── */
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-/* Slide up — for modals, toasts, cards loading in */
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Slide in from left — for mobile sidebar */
 @keyframes slideInLeft {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
 }
 
-/* Scrollbar styling */
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -8px, 0); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-orbit { animation: orbit 14s linear infinite; }
+.animate-scan { animation: scan 4s ease-in-out infinite; }
+.animate-drift { animation: drift 6s ease-in-out infinite; }
+.animate-flicker { animation: flicker 3s ease-in-out infinite; }
+
+/* ────────────────────────────────────────────────────────────
+   Selection
+   ──────────────────────────────────────────────────────────── */
+
+::selection {
+  background: var(--color-signal-muted);
+  color: var(--color-signal-hover);
+}
+
+/* ────────────────────────────────────────────────────────────
+   Scrollbars
+   ──────────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-edge); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-edge-strong); }
 
-/* Touch device enhancements */
+/* ────────────────────────────────────────────────────────────
+   Focus rings — global, immediate
+   ──────────────────────────────────────────────────────────── */
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-surface-0), 0 0 0 4px var(--color-signal-muted);
+}
+
+/* ────────────────────────────────────────────────────────────
+   Reticle — small targeting marker (decorative)
+   ──────────────────────────────────────────────────────────── */
+
+.reticle {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--color-signal);
+  position: relative;
+}
+.reticle::before, .reticle::after {
+  content: "";
+  position: absolute;
+  background: var(--color-signal);
+}
+.reticle::before { left: 50%; top: -4px; bottom: -4px; width: 1px; transform: translateX(-50%); }
+.reticle::after { top: 50%; left: -4px; right: -4px; height: 1px; transform: translateY(-50%); }
+
+/* ────────────────────────────────────────────────────────────
+   Touch device enhancements
+   ──────────────────────────────────────────────────────────── */
+
 @media (hover: none) and (pointer: coarse) {
   button, a, [role="button"] {
     min-height: 38px;

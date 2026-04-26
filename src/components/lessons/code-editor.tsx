@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import Editor, { type BeforeMount } from "@monaco-editor/react"
+import { useEffect, useRef, useState } from "react"
+import Editor, { type BeforeMount, type OnMount } from "@monaco-editor/react"
+import type { editor as MonacoEditor } from "monaco-editor"
 import { submitTask } from "@/actions/task-actions"
 import { Button } from "@/components/ui/button"
 import { Send } from "lucide-react"
@@ -36,6 +37,22 @@ export function CodeEditor({
     success?: boolean
     error?: string
   } | null>(null)
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null)
+
+  const handleMount: OnMount = (editor) => {
+    editorRef.current = editor
+  }
+
+  // Dispose Monaco models on unmount to prevent ~5-10MB leak per lesson
+  useEffect(() => {
+    return () => {
+      const editor = editorRef.current
+      if (editor) {
+        editor.getModel()?.dispose()
+        editor.dispose()
+      }
+    }
+  }, [])
 
   async function handleSubmit() {
     setIsSubmitting(true)
@@ -97,6 +114,7 @@ export function CodeEditor({
           value={code}
           onChange={(val) => setCode(val ?? "")}
           beforeMount={handleBeforeMount}
+          onMount={handleMount}
           theme="proxima-dark"
           options={{
             fontSize: 14,
